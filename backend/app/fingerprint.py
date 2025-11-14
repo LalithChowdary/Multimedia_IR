@@ -34,43 +34,52 @@ def generate_fingerprints(file_path: str):
     """
     Generates a set of audio fingerprints for a given audio file.
 
-    This process involves:
-    1. Loading the audio file.
-    2. Creating a spectrogram from the audio data.
-    3. Identifying peaks (local maxima) in the spectrogram.
-    4. Creating combinatorial hashes from pairs of peaks.
+    This function now acts as a wrapper that loads the audio file
+    and passes the data to the core fingerprinting logic.
 
     Args:
         file_path: The path to the audio file.
 
     Returns:
-        A set of hashes, where each hash is a tuple:
-        (hash_value, (song_id, anchor_time_offset))
-        (In this initial version, song_id will be the filename).
+        A set of hashes for the given audio data.
     """
     try:
-        # 1. Load audio file
         y, sr = librosa.load(file_path, sr=SAMPLE_RATE, mono=True)
-
-        # 2. Create spectrogram
-        # A spectrogram represents the frequency content of the audio over time.
-        spectrogram = np.abs(librosa.stft(y,
-                                          n_fft=FFT_WINDOW_SIZE,
-                                          hop_length=FFT_HOP_LENGTH))
-
-        # 3. Find peaks
-        # We are looking for local maxima in the spectrogram.
-        peaks = _find_spectrogram_peaks(spectrogram)
-
-        # 4. Create hashes
-        # We pair peaks together to create robust fingerprints.
-        hashes = _create_hashes(peaks, file_path)
-
-        return hashes
-
+        song_id = os.path.basename(file_path)
+        return _generate_fingerprints_from_array(y, song_id)
     except Exception as e:
         print(f"Error processing {file_path}: {e}")
         return set()
+
+def _generate_fingerprints_from_array(y: np.ndarray, song_id: str):
+    """
+    Generates a set of audio fingerprints from a raw audio array.
+
+    This process involves:
+    1. Creating a spectrogram from the audio data.
+    2. Identifying peaks (local maxima) in the spectrogram.
+    3. Creating combinatorial hashes from pairs of peaks.
+
+    Args:
+        y: The audio time series as a NumPy array.
+        song_id: The identifier for the song/stream.
+
+    Returns:
+        A set of hashes, where each hash is a tuple:
+        (hash_value, (song_id, anchor_time_offset))
+    """
+    # 1. Create spectrogram
+    spectrogram = np.abs(librosa.stft(y,
+                                      n_fft=FFT_WINDOW_SIZE,
+                                      hop_length=FFT_HOP_LENGTH))
+
+    # 2. Find peaks
+    peaks = _find_spectrogram_peaks(spectrogram)
+
+    # 3. Create hashes
+    hashes = _create_hashes(peaks, song_id)
+
+    return hashes
 
 
 def _find_spectrogram_peaks(spectrogram: np.ndarray):

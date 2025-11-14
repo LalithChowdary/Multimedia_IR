@@ -3,3 +3,5 @@ numpy==1.23.5
 scipy==1.10.1
 soundfile==0.12.1
 sounddevice==0.4.6
+fastapi==0.104.1
+uvicorn==0.24.0
