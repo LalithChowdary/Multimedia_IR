@@ -7,7 +7,7 @@ from pathlib import Path
 
 from fingerprint import generate_fingerprints
 from database import FingerprintDB
-from websocket import websocket_endpoint
+from streaming import websocket_endpoint
 
 # --- FastAPI App Initialization ---
 app = FastAPI()

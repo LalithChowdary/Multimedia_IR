@@ -1,148 +1,327 @@
+import os
 import librosa
 import numpy as np
-import os
 from scipy.ndimage import maximum_filter
-from scipy.ndimage import generate_binary_structure, iterate_structure
+from scipy import signal
+from scipy.signal import butter, sosfilt
 
-# --- Constants ---
-# Downsampling rate. We don't need full quality for fingerprinting.
-# 22050 Hz is a common choice.
-SAMPLE_RATE = 22050
+# --- Shazam Algorithm Constants (Real-World Optimized) ---
 
-# FFT window size. Determines the frequency resolution.
-# 4096 is a good starting point.
-FFT_WINDOW_SIZE = 4096
+# Audio processing parameters
+SAMPLE_RATE = 8000  # 8KHz as per paper
 
-# Hop length. Number of samples between successive FFT windows.
-# A smaller hop length gives more temporal resolution.
-FFT_HOP_LENGTH = 2048
+# STFT Parameters - optimized for real-world matching
+FFT_WINDOW_SIZE = 2048  # INCREASED for better frequency resolution
+FFT_HOP_LENGTH = 64     # INCREASED for more stable peaks
 
-# --- Peak Finding Parameters ---
-# This defines a square neighborhood of 20x20 around a peak.
-# A peak is only kept if it's the maximum in this neighborhood.
-PEAK_NEIGHBORHOOD_SIZE = 20
+# Peak finding parameters - MORE AGGRESSIVE for real-world
+# Paper: "Candidate peaks are chosen according to amplitude"
+MIN_AMPLITUDE_THRESHOLD = 10  # dB above noise floor (lowered for captured audio)
 
-# --- Fingerprinting Parameters ---
-# The "target zone" for pairing peaks.
-# We'll pair a peak with other peaks that appear after it in time
-# and are within a certain frequency and time range.
-TARGET_ZONE_T_START = 0.1  # Start of target zone (seconds)
-TARGET_ZONE_T_END = 1.0    # End of target zone (seconds)
-TARGET_ZONE_F_BINS = 100   # Frequency range (in FFT bins)
+# Neighborhood size for peak detection - LARGER for stability
+PEAK_NEIGHBORHOOD_TIME = 20   # frames (doubled)
+PEAK_NEIGHBORHOOD_FREQ = 20   # frequency bins
+
+# Density control - CRITICAL for real-world matching
+# Need MORE peaks to ensure overlap between original and captured
+TARGET_PEAK_DENSITY = 10.0  # peaks per second (MUCH higher)
+
+# Fingerprint generation parameters - OPTIMIZED for robustness
+# Paper: "fan-out factor" F
+FAN_VALUE = 15  # INCREASED for more redundancy in noisy conditions
+
+# Target zone definition - WIDER for matching across distortions
+MIN_TIME_DELTA = 0      
+MAX_TIME_DELTA = 200    
+FREQ_WINDOW = 2000      # DOUBLED - allows more freq variation
+
+# Frequency range to focus on (Hz)
+# Human speech is 80-300Hz, music is 80-15000Hz
+# Focus on mid-high frequencies where music is distinct
+MIN_FREQ_HZ = 300      # Ignore low rumble and bass (often distorted)
+MAX_FREQ_HZ = 4000     # Nyquist at 8KHz is 4000Hz
 
 
 def generate_fingerprints(file_path: str):
     """
-    Generates a set of audio fingerprints for a given audio file.
-
-    This function now acts as a wrapper that loads the audio file
-    and passes the data to the core fingerprinting logic.
-
+    Generates audio fingerprints using the Shazam algorithm.
+    OPTIMIZED for real-world audio capture scenarios.
+    
     Args:
-        file_path: The path to the audio file.
-
+        file_path: Path to the audio file.
+    
     Returns:
-        A set of hashes for the given audio data.
+        A set of (hash, (song_id, time_offset)) tuples.
     """
     try:
+        # Load audio at 8KHz mono (as per Shazam paper)
         y, sr = librosa.load(file_path, sr=SAMPLE_RATE, mono=True)
+        
         song_id = os.path.basename(file_path)
         return _generate_fingerprints_from_array(y, song_id)
     except Exception as e:
         print(f"Error processing {file_path}: {e}")
         return set()
 
+
 def _generate_fingerprints_from_array(y: np.ndarray, song_id: str):
     """
-    Generates a set of audio fingerprints from a raw audio array.
-
-    This process involves:
-    1. Creating a spectrogram from the audio data.
-    2. Identifying peaks (local maxima) in the spectrogram.
-    3. Creating combinatorial hashes from pairs of peaks.
-
+    Core fingerprinting logic implementing Shazam's constellation map approach.
+    ENHANCED for real-world microphone capture.
+    
+    Process:
+    1. Preprocess audio (denoise, normalize, filter)
+    2. Generate spectrogram
+    3. Extract constellation map (robust peaks)
+    4. Create combinatorial hashes using anchor-target pairing
+    
     Args:
-        y: The audio time series as a NumPy array.
-        song_id: The identifier for the song/stream.
-
+        y: Audio time series
+        song_id: Identifier for the audio
+    
     Returns:
-        A set of hashes, where each hash is a tuple:
-        (hash_value, (song_id, anchor_time_offset))
+        Set of (hash, (song_id, time_offset)) tuples
     """
-    # 1. Create spectrogram
-    spectrogram = np.abs(librosa.stft(y,
-                                      n_fft=FFT_WINDOW_SIZE,
-                                      hop_length=FFT_HOP_LENGTH))
-
-    # 2. Find peaks
-    peaks = _find_spectrogram_peaks(spectrogram)
-
-    # 3. Create hashes
-    hashes = _create_hashes(peaks, song_id)
-
+    # CRITICAL: Preprocess for real-world capture
+    y = _preprocess_audio(y)
+    
+    # Step 1: Create spectrogram using STFT
+    spectrogram = _generate_spectrogram(y)
+    
+    # Step 2: Extract constellation map (robust peaks)
+    peaks = _extract_constellation_map(spectrogram)
+    
+    print(f"Extracted {len(peaks)} constellation peaks")
+    
+    # Step 3: Generate combinatorial hashes from peaks
+    hashes = _generate_hashes_from_peaks(peaks, song_id)
+    
+    print(f"Generated {len(hashes)} fingerprint hashes")
+    
     return hashes
 
 
-def _find_spectrogram_peaks(spectrogram: np.ndarray):
+def _preprocess_audio(y: np.ndarray):
     """
-    Finds local maxima (peaks) in a spectrogram.
+    Preprocess audio for robust fingerprinting.
+    CRITICAL for matching captured audio to database originals.
+    
+    Steps:
+    1. Normalize amplitude
+    2. High-pass filter (remove low-frequency rumble)
+    3. Pre-emphasis (boost high frequencies)
+    4. Noise gate (remove very quiet sections)
     """
-    # We use a maximum filter to find peaks. A point is a peak if it's the
-    # maximum value in a neighborhood of a certain size.
-    struct = generate_binary_structure(2, 1)
-    neighborhood = iterate_structure(struct, PEAK_NEIGHBORHOOD_SIZE)
-
-    local_max = maximum_filter(spectrogram, footprint=neighborhood) == spectrogram
+    # 1. Normalize to [-1, 1] range
+    if np.max(np.abs(y)) > 0:
+        y = y / np.max(np.abs(y))
     
-    # The local_max is a boolean array. We want the coordinates of the peaks.
-    # We also apply a threshold to discard very quiet peaks.
-    # This threshold can be tuned.
-    detected_peaks = (spectrogram > np.median(spectrogram) * 1.5) & local_max
+    # 2. High-pass filter at 300Hz to remove low-frequency noise
+    # Room rumble, AC hum, and bass are often distorted in capture
+    sos = butter(4, 300, 'hp', fs=SAMPLE_RATE, output='sos')
+    y = sosfilt(sos, y)
     
-    # Get the (frequency, time) coordinates of the peaks
-    freq_bins, time_indices = np.where(detected_peaks)
+    # 3. Pre-emphasis filter to boost high frequencies
+    # High frequencies contain more distinctive features
+    y = librosa.effects.preemphasis(y, coef=0.97)
     
-    # Return a list of (time, frequency) pairs
-    return list(zip(time_indices, freq_bins))
+    # 4. Noise gate - zero out very quiet samples
+    # Helps remove silent sections and background hiss
+    threshold = 0.01
+    y[np.abs(y) < threshold] = 0
+    
+    # 5. Re-normalize after filtering
+    if np.max(np.abs(y)) > 0:
+        y = y / np.max(np.abs(y))
+    
+    return y
 
 
-def _create_hashes(peaks: list, song_id: str):
+def _generate_spectrogram(y: np.ndarray):
     """
-    Creates combinatorial hashes from a list of spectrogram peaks.
+    Generate spectrogram using Short-Time Fourier Transform.
+    ENHANCED for real-world matching.
+    
+    Returns magnitude spectrogram with log scaling for better peak detection.
+    """
+    # Use Hanning window for better frequency resolution
+    window = signal.windows.hann(FFT_WINDOW_SIZE)
+    
+    # Compute STFT
+    stft = librosa.stft(
+        y,
+        n_fft=FFT_WINDOW_SIZE,
+        hop_length=FFT_HOP_LENGTH,
+        window=window
+    )
+    
+    # Get magnitude spectrogram
+    spectrogram = np.abs(stft)
+    
+    # Focus on frequency range of interest (300Hz - 4000Hz)
+    # This removes unreliable low and very high frequencies
+    freq_bins = spectrogram.shape[0]
+    freq_resolution = SAMPLE_RATE / FFT_WINDOW_SIZE
+    
+    min_bin = int(MIN_FREQ_HZ / freq_resolution)
+    max_bin = int(MAX_FREQ_HZ / freq_resolution)
+    
+    # Crop to frequency range
+    spectrogram = spectrogram[min_bin:max_bin, :]
+    
+    # Convert to dB scale with noise floor
+    # Add small epsilon to avoid log(0)
+    spectrogram = librosa.amplitude_to_db(spectrogram + 1e-10, ref=np.max)
+    
+    # Apply median filtering to reduce noise spikes
+    # This helps with random noise in captured audio
+    from scipy.ndimage import median_filter
+    spectrogram = median_filter(spectrogram, size=(3, 3))
+    
+    return spectrogram
+
+
+def _extract_constellation_map(spectrogram: np.ndarray):
+    """
+    Extract constellation map: robust spectrogram peaks.
+    ENHANCED to find peaks that survive real-world capture.
+    
+    Key changes:
+    - More aggressive peak detection
+    - Better density control
+    - Amplitude-weighted selection
+    
+    Returns:
+        List of (time_idx, freq_idx) tuples representing peaks
+    """
+    # Get spectrogram dimensions
+    freq_bins, time_frames = spectrogram.shape
+    
+    # Apply maximum filter to find local maxima
+    struct = np.ones((PEAK_NEIGHBORHOOD_FREQ, PEAK_NEIGHBORHOOD_TIME))
+    local_max = maximum_filter(spectrogram, footprint=struct) == spectrogram
+    
+    # Apply amplitude threshold (lower for captured audio)
+    threshold = spectrogram.max() - MIN_AMPLITUDE_THRESHOLD
+    amplitude_filter = spectrogram > threshold
+    
+    # Combine filters to get peak candidates
+    peaks_mask = local_max & amplitude_filter
+    
+    # Get peak coordinates and amplitudes
+    freq_idx, time_idx = np.where(peaks_mask)
+    peak_amplitudes = spectrogram[freq_idx, time_idx]
+    
+    # Create array of peaks with their properties
+    peaks_data = np.column_stack((time_idx, freq_idx, peak_amplitudes))
+    
+    # Sort by amplitude (descending) to prioritize strongest peaks
+    peaks_data = peaks_data[peaks_data[:, 2].argsort()[::-1]]
+    
+    # Apply density control - INCREASED for real-world
+    duration = time_frames * FFT_HOP_LENGTH / SAMPLE_RATE
+    target_num_peaks = int(TARGET_PEAK_DENSITY * duration)
+    
+    # Take top N peaks by amplitude
+    if len(peaks_data) > target_num_peaks:
+        peaks_data = peaks_data[:target_num_peaks]
+    
+    # Convert back to list of (time, freq) tuples
+    # Adjust freq_idx to account for cropped frequency range
+    freq_offset = int(MIN_FREQ_HZ / (SAMPLE_RATE / FFT_WINDOW_SIZE))
+    peaks_list = [(int(t), int(f) + freq_offset) for t, f, _ in peaks_data]
+    
+    return peaks_list
+
+
+def _generate_hashes_from_peaks(peaks: list, song_id: str):
+    """
+    Generate combinatorial hashes using anchor-target point pairing.
+    ENHANCED for maximum redundancy in real-world scenarios.
+    
+    Key changes:
+    - Higher fan-out for more hash redundancy
+    - Wider frequency window for distortion tolerance
+    
+    Returns:
+        Set of (hash, (song_id, anchor_time)) tuples
     """
     hashes = set()
     
-    # For each peak, we create a hash with other peaks in its "target zone".
+    # Sort peaks by time for efficient pairing
+    peaks = sorted(peaks, key=lambda x: x[0])
+    
+    # For each peak, use it as an anchor point
     for i, (t1, f1) in enumerate(peaks):
-        # Define the target zone for the current peak (t1, f1)
-        t_min = t1 + librosa.time_to_frames(TARGET_ZONE_T_START, sr=SAMPLE_RATE, hop_length=FFT_HOP_LENGTH)
-        t_max = t1 + librosa.time_to_frames(TARGET_ZONE_T_END, sr=SAMPLE_RATE, hop_length=FFT_HOP_LENGTH)
-        f_min = f1 - TARGET_ZONE_F_BINS
-        f_max = f1 + TARGET_ZONE_F_BINS
-
-        # Iterate through subsequent peaks to find pairs
-        for (t2, f2) in peaks[i+1:]:
-            if t_min <= t2 <= t_max and f_min <= f2 <= f_max:
-                # This is the "secret sauce". The hash is a combination of the
-                # two peak frequencies and the time difference between them.
-                # This makes the hash robust to time shifts.
-                time_delta = t2 - t1
-                hash_val = hash((f1, f2, time_delta))
-                
-                # We store the hash along with the song ID and the time of the
-                # first peak. This is crucial for matching later.
-                hashes.add((hash_val, (song_id, t1)))
-
+        # Define target zone boundaries
+        target_zone_start = i + 1
+        
+        # Count targets added for this anchor
+        targets_added = 0
+        
+        # Look for target points in the target zone
+        for j in range(target_zone_start, len(peaks)):
+            if targets_added >= FAN_VALUE:
+                break
+            
+            t2, f2 = peaks[j]
+            
+            # Check if target point is within time bounds
+            time_delta = t2 - t1
+            if time_delta < MIN_TIME_DELTA:
+                continue
+            if time_delta > MAX_TIME_DELTA:
+                break
+            
+            # Check if target point is within frequency bounds
+            freq_delta = abs(f2 - f1)
+            if freq_delta > FREQ_WINDOW:
+                continue
+            
+            # Create hash from (freq1, freq2, time_delta)
+            hash_value = _create_hash(f1, f2, time_delta)
+            
+            # Store hash with song_id and anchor time
+            hashes.add((hash_value, (song_id, t1)))
+            targets_added += 1
+    
     return hashes
 
-if __name__ == '__main__':
-    # This is a simple test to run the script directly.
-    # Replace with a path to an actual audio file.
-    # Make sure you have a file in 'backend/audio_files/'
+
+def _create_hash(f1: int, f2: int, t_delta: int):
+    """
+    Create a deterministic hash from frequency pair and time delta.
     
-    # Example usage:
-    # test_file = 'backend/audio_files/your_song.mp3'
-    # fingerprints = generate_fingerprints(test_file)
-    # print(f"Generated {len(fingerprints)} fingerprints for {test_file}")
-    # print("Example fingerprint:", list(fingerprints)[0] if fingerprints else "None")
-    pass
+    Uses bit-packing for deterministic 32-bit hash:
+    - 10 bits for f1 (0-1023)
+    - 10 bits for f2 (0-1023)  
+    - 12 bits for t_delta (0-4095)
+    """
+    # Clamp values to fit in allocated bits
+    f1_clamped = min(int(f1), 1023)
+    f2_clamped = min(int(f2), 1023)
+    t_delta_clamped = min(int(t_delta), 4095)
+    
+    # Pack into 32-bit integer
+    hash_value = (f1_clamped << 22) | (f2_clamped << 12) | t_delta_clamped
+    
+    return hash_value
+
+
+if __name__ == '__main__':
+    # Test the fingerprinting algorithm
+    import sys
+    
+    if len(sys.argv) > 1:
+        test_file = sys.argv[1]
+        print(f"Testing fingerprint generation on: {test_file}")
+        
+        fingerprints = generate_fingerprints(test_file)
+        print(f"Generated {len(fingerprints)} fingerprints")
+        
+        # Show first few fingerprints
+        for i, (hash_val, (song_id, time_offset)) in enumerate(list(fingerprints)[:10]):
+            print(f"  Hash: {hash_val:08x}, Time: {time_offset}, Song: {song_id}")
+    else:
+        print("Usage: python fingerprint.py <audio_file>")
+        print("\nThis version is optimized for real-world audio capture!")

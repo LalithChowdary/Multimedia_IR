@@ -7,6 +7,8 @@ interface MatchResult {
     match: boolean;
     song_id?: string;
     confidence?: number;
+    offset?: number;
+    confirmed?: boolean;
     message?: string;
 }
 
@@ -48,7 +50,8 @@ export default function AudioRecorder() {
             audioStreamRef.current = stream;
 
             // 2. Create and Configure AudioContext
-            const context = new AudioContext({ sampleRate: 22050 });
+            // Use 8KHz sample rate to match Shazam algorithm (as per Wang's paper)
+            const context = new AudioContext({ sampleRate: 8000 });
             audioContextRef.current = context;
 
             // 3. Load the AudioWorklet
@@ -88,7 +91,11 @@ export default function AudioRecorder() {
                 if (result.match) {
                     // Match found! Display it and continue listening
                     setMatch(result);
-                    setStatus('Match found! Still listening...');
+                    if (result.confirmed) {
+                        setStatus('✓ Confirmed Match! Still listening...');
+                    } else {
+                        setStatus(result.message || 'Potential match detected...');
+                    }
                 } else {
                     // Still listening, no match yet
                     setStatus(result.message || 'Listening for music...');
@@ -199,13 +206,20 @@ export default function AudioRecorder() {
                 <div style={{ 
                     marginTop: '30px', 
                     padding: '25px', 
-                    border: '2px solid #4caf50', 
+                    border: match.confirmed ? '3px solid #2e7d32' : '2px solid #ff9800', 
                     borderRadius: '15px', 
-                    backgroundColor: '#e8f5e9',
+                    backgroundColor: match.confirmed ? '#e8f5e9' : '#fff3e0',
                     minWidth: '400px',
-                    boxShadow: '0 4px 12px rgba(76, 175, 80, 0.2)'
+                    boxShadow: match.confirmed 
+                        ? '0 4px 12px rgba(46, 125, 50, 0.3)' 
+                        : '0 4px 12px rgba(255, 152, 0, 0.2)'
                 }}>
-                    <h2 style={{ margin: '0 0 15px 0', color: '#2e7d32' }}>✓ Match Found!</h2>
+                    <h2 style={{ 
+                        margin: '0 0 15px 0', 
+                        color: match.confirmed ? '#2e7d32' : '#e65100' 
+                    }}>
+                        {match.confirmed ? '✓✓ Confirmed Match!' : '? Potential Match'}
+                    </h2>
                     <div style={{ fontSize: '16px' }}>
                         <p style={{ margin: '10px 0' }}>
                             <strong>Song:</strong> <span style={{ color: '#1976d2' }}>{match.song_id}</span>
@@ -213,6 +227,16 @@ export default function AudioRecorder() {
                         <p style={{ margin: '10px 0' }}>
                             <strong>Confidence:</strong> <span style={{ color: '#f57c00' }}>{match.confidence}</span>
                         </p>
+                        {match.offset !== undefined && (
+                            <p style={{ margin: '10px 0' }}>
+                                <strong>Time Offset:</strong> <span style={{ color: '#7b1fa2' }}>{match.offset} frames</span>
+                            </p>
+                        )}
+                        {!match.confirmed && (
+                            <p style={{ margin: '15px 0 0 0', fontSize: '14px', color: '#e65100', fontStyle: 'italic' }}>
+                                Waiting for confirmation across multiple windows...
+                            </p>
+                        )}
                     </div>
                 </div>
             )}
@@ -227,8 +251,8 @@ export default function AudioRecorder() {
                 textAlign: 'center'
             }}>
                 <p style={{ margin: 0, fontSize: '14px', color: '#666' }}>
-                    Click <strong>Start</strong> to begin listening. The system will continuously analyze audio 
-                    and display matches in real-time. Click <strong>Stop</strong> when done.
+                    <strong>Shazam Algorithm</strong> - Using 10-second windows with 3-second overlap.
+                    Matches are confirmed when detected consistently across multiple windows.
                 </p>
             </div>
         </div>

@@ -1,11 +1,16 @@
 import pickle
 import os
 from collections import defaultdict
+import numpy as np
 
 # --- Constants ---
 # Get the absolute path to the database directory
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DB_PATH = os.path.join(BASE_DIR, 'database', 'fingerprints.db')
+
+# Shazam algorithm matching parameters
+MIN_MATCH_THRESHOLD = 5  # Minimum aligned hashes for a valid match
+CLUSTER_TOLERANCE = 2     # Tolerance for time offset clustering (frames)
 
 class FingerprintDB:
     """
@@ -29,41 +34,79 @@ class FingerprintDB:
         for hash_val, (s_id, time_offset) in fingerprints:
             self.db[hash_val].append((song_id, time_offset))
 
-    def get_matches(self, fingerprints: set, threshold: int = 5):
+    def get_matches(self, fingerprints: set, threshold: int = MIN_MATCH_THRESHOLD):
         """
-        Finds songs that match a given set of fingerprints from a sample clip.
-
+        Find matching songs using Shazam's scatterplot histogram technique.
+        
+        Implementation of the algorithm described in Wang's paper:
+        1. For each hash in sample, find matching hashes in database
+        2. Create time-pair scatterplot for each song
+        3. Calculate delta_t histogram (offset differences)
+        4. Find diagonal line (cluster) in scatterplot
+        5. Score is the size of the largest cluster
+        
         Args:
-            fingerprints: A set of fingerprints from the sample clip.
-            threshold: The minimum number of matching fingerprints to be considered a match.
-
+            fingerprints: Set of (hash, (song_id, time_offset)) tuples from sample
+            threshold: Minimum number of aligned hashes for valid match
+        
         Returns:
-            A list of (song_id, confidence_score) tuples, sorted by confidence.
+            List of (song_id, confidence_score, offset) tuples, sorted by confidence
         """
-        # This dictionary will store potential matches and their time offsets.
-        # { song_id: { time_offset_diff: count } }
-        matches = defaultdict(lambda: defaultdict(int))
-
-        # For each fingerprint from the sample, find matching fingerprints in the DB.
+        # Dictionary to store time pairs for each song
+        # Structure: {song_id: [(sample_time, db_time), ...]}
+        time_pairs = defaultdict(list)
+        
+        # Step 1: Find all matching hashes and collect time pairs
         for hash_val, (_, sample_time) in fingerprints:
             if hash_val in self.db:
                 for song_id, db_time in self.db[hash_val]:
-                    # The key insight for matching:
-                    # If the sample is from a song in our DB, the *difference*
-                    # in time offsets should be consistent.
-                    time_offset_diff = db_time - sample_time
-                    matches[song_id][time_offset_diff] += 1
+                    time_pairs[song_id].append((sample_time, db_time))
         
-        # The confidence score for a song is the maximum number of fingerprints
-        # that align at a specific time offset.
+        # Step 2: For each song, analyze the time-pair scatterplot
         results = []
-        for song_id, offset_counts in matches.items():
-            if offset_counts:
-                max_confidence = max(offset_counts.values())
-                if max_confidence >= threshold:
-                    results.append((song_id, max_confidence))
-
-        # Sort results by confidence score in descending order.
+        
+        for song_id, pairs in time_pairs.items():
+            if len(pairs) < threshold:
+                continue  # Not enough matches to consider
+            
+            # Step 3: Calculate delta_t for each time pair
+            # delta_t = db_time - sample_time (should be constant for matches)
+            deltas = np.array([db_t - sample_t for sample_t, db_t in pairs])
+            
+            # Step 4: Find the largest cluster using histogram
+            # Sort deltas for efficient cluster detection
+            sorted_deltas = np.sort(deltas)
+            
+            # Find largest cluster of similar delta values
+            best_cluster_size = 0
+            best_offset = 0
+            
+            i = 0
+            while i < len(sorted_deltas):
+                # Count consecutive deltas within tolerance
+                current_delta = sorted_deltas[i]
+                cluster_size = 1
+                j = i + 1
+                
+                while j < len(sorted_deltas):
+                    if abs(sorted_deltas[j] - current_delta) <= CLUSTER_TOLERANCE:
+                        cluster_size += 1
+                        j += 1
+                    else:
+                        break
+                
+                # Update best cluster if this is larger
+                if cluster_size > best_cluster_size:
+                    best_cluster_size = cluster_size
+                    best_offset = int(current_delta)
+                
+                i = j if j > i + 1 else i + 1
+            
+            # Only add if cluster meets threshold
+            if best_cluster_size >= threshold:
+                results.append((song_id, best_cluster_size, best_offset))
+        
+        # Sort by confidence (cluster size) descending
         return sorted(results, key=lambda x: x[1], reverse=True)
 
     def save(self):
@@ -79,6 +122,24 @@ class FingerprintDB:
         except FileNotFoundError:
             print("Database file not found. Starting with an empty database.")
             self.db = defaultdict(list)
+
+    def get_stats(self):
+        """Returns statistics about the fingerprint database."""
+        total_fingerprints = sum(len(matches) for matches in self.db.values())
+        unique_hashes = len(self.db)
+        
+        # Count songs (unique song_ids across all fingerprints)
+        songs = set()
+        for matches in self.db.values():
+            for song_id, _ in matches:
+                songs.add(song_id)
+        
+        return {
+            'total_fingerprints': total_fingerprints,
+            'unique_hashes': unique_hashes,
+            'total_songs': len(songs),
+            'avg_fingerprints_per_hash': total_fingerprints / unique_hashes if unique_hashes > 0 else 0
+        }
 
 if __name__ == '__main__':
     # Example usage:
