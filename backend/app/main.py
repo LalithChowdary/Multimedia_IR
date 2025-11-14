@@ -4,6 +4,10 @@ from fastapi import FastAPI, UploadFile, File, WebSocket
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pathlib import Path
+import sys
+
+# Add music_recognition to path
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'music_recognition'))
 
 from fingerprint import generate_fingerprints
 from database import FingerprintDB
