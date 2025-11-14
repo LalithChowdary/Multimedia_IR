@@ -1,10 +1,15 @@
 import os
+import sys
 import glob
-from backend.app.fingerprint import generate_fingerprints
-from backend.app.database import FingerprintDB
+
+# Add the backend/app directory to the Python path
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'app'))
+
+from fingerprint import generate_fingerprints
+from database import FingerprintDB
 
 # --- Constants ---
-AUDIO_DIR = 'backend/audio_files'
+AUDIO_DIR = os.path.join(os.path.dirname(__file__), 'audio_files')
 
 def ingest_songs():
     """

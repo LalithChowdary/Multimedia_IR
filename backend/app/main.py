@@ -2,14 +2,29 @@ import os
 import shutil
 from fastapi import FastAPI, UploadFile, File, WebSocket
 from fastapi.responses import JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
 from pathlib import Path
 
-from backend.app.fingerprint import generate_fingerprints
-from backend.app.database import FingerprintDB
-from backend.app.websocket import websocket_endpoint
+from fingerprint import generate_fingerprints
+from database import FingerprintDB
+from websocket import websocket_endpoint
 
 # --- FastAPI App Initialization ---
 app = FastAPI()
+
+# --- CORS Middleware ---
+# This allows our frontend (running on localhost:3000) to communicate with our backend.
+origins = [
+    "http://localhost:3000",
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # --- Database Loading ---
 # Load the fingerprint database into memory when the app starts.

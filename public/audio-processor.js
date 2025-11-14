@@ -3,15 +3,16 @@
 class AudioProcessor extends AudioWorkletProcessor {
     constructor() {
         super();
-        // A buffer to store audio data until we have a full chunk to send
-        this.buffer = new Int16Array(1024);
+        // Buffer size optimized for network transmission (4096 samples)
+        // At 22050 Hz, this is ~185ms of audio per chunk
+        this.buffer = new Int16Array(4096);
         this.bufferIndex = 0;
     }
 
     /**
      * This method is called by the browser's audio engine with new audio data.
      * @param {Float32Array[][]} inputs - An array of inputs, each with an array of channels.
-     *                                    We expect a single input with a single channel.
+     *                                    We expect a single input with a single channel (mono).
      */
     process(inputs) {
         // We expect mono audio, so we only take the first channel of the first input.
@@ -28,12 +29,16 @@ class AudioProcessor extends AudioWorkletProcessor {
         for (let i = 0; i < inputChannel.length; i++) {
             // Clamp the value to be within [-1, 1] before conversion
             const s = Math.max(-1, Math.min(1, inputChannel[i]));
+
             // Convert to 16-bit integer
+            // Use proper scaling: negative values → -32768, positive values → 32767
             this.buffer[this.bufferIndex++] = s < 0 ? s * 0x8000 : s * 0x7FFF;
 
             // When the buffer is full, send it to the main thread.
             if (this.bufferIndex === this.buffer.length) {
-                this.port.postMessage(this.buffer.buffer);
+                // Send a copy of the buffer to the main thread via WebSocket
+                this.port.postMessage(this.buffer.buffer.slice(0));
+
                 // Reset the buffer index for the next chunk.
                 this.bufferIndex = 0;
             }

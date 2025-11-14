@@ -2,8 +2,8 @@ import asyncio
 import numpy as np
 from fastapi import WebSocket, WebSocketDisconnect
 
-from backend.app.database import FingerprintDB
-from backend.app.fingerprint import (
+from database import FingerprintDB
+from fingerprint import (
     _generate_fingerprints_from_array,
     FFT_WINDOW_SIZE,
     FFT_HOP_LENGTH,
@@ -71,36 +71,51 @@ class AudioProcessor:
     async def _analyze_buffer(self):
         """
         Analyzes the current audio buffer to identify a song.
-        This runs as a background task.
+        This runs as a background task and continues to analyze
+        the rolling buffer as new audio comes in.
         """
-        print("Analyzing audio buffer...")
-        
-        # Take a snapshot of the buffer for analysis
-        buffer_snapshot = self.buffer[:ANALYSIS_CHUNK_BYTES]
-        
-        # Convert the raw bytes (Int16) to a NumPy array of floats,
-        # which is what our fingerprinting code expects.
-        audio_array = np.frombuffer(buffer_snapshot, dtype=np.int16).astype(np.float32) / 32768.0
+        try:
+            while len(self.buffer) >= ANALYSIS_CHUNK_BYTES:
+                print(f"Analyzing audio buffer... Buffer size: {len(self.buffer)} bytes")
+                
+                # Take a snapshot of the buffer for analysis
+                buffer_snapshot = self.buffer[:ANALYSIS_CHUNK_BYTES]
+                
+                # Convert the raw bytes (Int16) to a NumPy array of floats,
+                # which is what our fingerprinting code expects.
+                audio_array = np.frombuffer(buffer_snapshot, dtype=np.int16).astype(np.float32) / 32768.0
 
-        # --- Use our refactored fingerprinting logic ---
-        fingerprints = _generate_fingerprints_from_array(audio_array, "stream")
-        matches = self.db.get_matches(fingerprints)
-        
-        if matches:
-            best_match = matches[0]
-            result = {
-                "match": True,
-                "song_id": best_match[0],
-                "confidence": best_match[1]
-            }
-            await self.websocket.send_json(result)
-            print(f"Sent match to client: {result}")
+                # --- Use our refactored fingerprinting logic ---
+                fingerprints = _generate_fingerprints_from_array(audio_array, "stream")
+                
+                if fingerprints:
+                    matches = self.db.get_matches(fingerprints)
+                    
+                    if matches:
+                        best_match = matches[0]
+                        result = {
+                            "match": True,
+                            "song_id": best_match[0],
+                            "confidence": best_match[1]
+                        }
+                        await self.websocket.send_json(result)
+                        print(f"✓ Match found! Song: {best_match[0]}, Confidence: {best_match[1]}")
+                    else:
+                        # Send a no-match update to keep the UI informed
+                        await self.websocket.send_json({
+                            "match": False,
+                            "message": "Listening..."
+                        })
 
-        # Slide the buffer window
-        self.buffer = self.buffer[ANALYSIS_SLIDE_BYTES:]
-        
-        # Allow the next analysis to run
-        self.processing_task = None
+                # Slide the buffer window
+                self.buffer = self.buffer[ANALYSIS_SLIDE_BYTES:]
+                
+                # Small delay to prevent overwhelming the system
+                await asyncio.sleep(0.1)
+                
+        finally:
+            # Allow the next analysis to run
+            self.processing_task = None
 
 
 # --- WebSocket Endpoint ---
