@@ -7,3 +7,11 @@ fastapi>=0.104.1
 uvicorn>=0.24.0
 python-multipart>=0.0.6
 websockets>=12.0
+
+# Video search dependencies
+openai-whisper>=20231117
+sentence-transformers>=2.2.2
+chromadb>=0.4.18
+moviepy>=1.0.3
+torch>=2.0.0
+torchaudio>=2.0.0
