@@ -9,7 +9,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DB_PATH = os.path.join(BASE_DIR, 'database', 'fingerprints.db')
 
 # Shazam algorithm matching parameters
-MIN_MATCH_THRESHOLD = 5  # Minimum aligned hashes for a valid match
+MIN_MATCH_THRESHOLD = 3  # Minimum aligned hashes for a valid match
 CLUSTER_TOLERANCE = 2     # Tolerance for time offset clustering (frames)
 
 class FingerprintDB:

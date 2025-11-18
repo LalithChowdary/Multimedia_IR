@@ -19,16 +19,16 @@ FFT_HOP_LENGTH = 64     # INCREASED for more stable peaks
 MIN_AMPLITUDE_THRESHOLD = 10  # dB above noise floor (lowered for captured audio)
 
 # Neighborhood size for peak detection - LARGER for stability
-PEAK_NEIGHBORHOOD_TIME = 20   # frames (doubled)
-PEAK_NEIGHBORHOOD_FREQ = 20   # frequency bins
+PEAK_NEIGHBORHOOD_TIME = 10   # frames (doubled)
+PEAK_NEIGHBORHOOD_FREQ = 10   # frequency bins
 
 # Density control - CRITICAL for real-world matching
 # Need MORE peaks to ensure overlap between original and captured
-TARGET_PEAK_DENSITY = 10.0  # peaks per second (MUCH higher)
+TARGET_PEAK_DENSITY = 20.0  # peaks per second (MUCH higher)
 
 # Fingerprint generation parameters - OPTIMIZED for robustness
 # Paper: "fan-out factor" F
-FAN_VALUE = 15  # INCREASED for more redundancy in noisy conditions
+FAN_VALUE = 20  # INCREASED for more redundancy in noisy conditions
 
 # Target zone definition - WIDER for matching across distortions
 MIN_TIME_DELTA = 0      

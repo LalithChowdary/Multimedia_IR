@@ -14,8 +14,8 @@ from fingerprint import (
 # For real-time: use overlapping windows for continuous detection
 
 # Rolling window parameters optimized for Shazam algorithm
-ANALYSIS_CHUNK_DURATION = 10  # seconds (increased from 5 for better accuracy)
-ANALYSIS_SLIDE_DURATION = 3   # seconds (overlap for robustness and continuity)
+ANALYSIS_CHUNK_DURATION = 4  # seconds (increased from 5 for better accuracy)
+ANALYSIS_SLIDE_DURATION = 1   # seconds (overlap for robustness and continuity)
 
 # Convert durations to buffer sizes in bytes
 # Audio is 16-bit integers (2 bytes per sample)
