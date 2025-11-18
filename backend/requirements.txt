@@ -1,24 +1,38 @@
+# Audio fingerprinting and music recognition
 librosa>=0.10.0
 numpy>=1.26.0
 scipy>=1.11.0
 soundfile>=0.12.1
 sounddevice>=0.4.6
+
+# FastAPI backend
 fastapi>=0.104.1
 uvicorn>=0.24.0
 python-multipart>=0.0.6
 websockets>=12.0
 
-# For video and audio processing
-moviepy
+# Video and audio processing
+moviepy>=1.0.3
 
-# For AI-powered transcription
+# AI-powered transcription (Whisper)
 # Note: The first time you run the transcription, Whisper will download its model files.
 # You can choose different model sizes (tiny, base, small, medium, large).
-# The 'base' model is a good starting point.
-openai-whisper
+openai-whisper>=20230314
 
-# The whisper library depends on torch for deep learning operations.
-torch
+# Deep learning framework
+torch>=2.0.0
 
-# For progress bars during processing
-tqdm
+# Progress bars
+tqdm>=4.65.0
+
+# Semantic video search
+sentence-transformers>=2.2.0
+scikit-learn>=1.0.0
+
+# Fast vector similarity search (enhanced v2)
+faiss-cpu>=1.7.4
+# faiss-gpu>=1.7.4  # Uncomment if you have GPU support
+
+# Optional but recommended
+pyyaml>=6.0
+pandas>=2.0.0

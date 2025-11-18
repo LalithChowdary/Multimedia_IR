@@ -1,0 +1,169 @@
+[00:00:00.000 --> 00:00:01.620] So Apple's M5 chip launch,
+[00:00:01.620 --> 00:00:03.940] but there was no launch event or announcement video
+[00:00:03.940 --> 00:00:07.060] is just a website update where three existing products
+[00:00:07.060 --> 00:00:09.140] had been updated to this new chip.
+[00:00:09.140 --> 00:00:11.160] And it's just the base M5 chip.
+[00:00:11.160 --> 00:00:13.380] There's no M5 max or M5 Pro.
+[00:00:13.380 --> 00:00:15.340] Those were probably coming the next year.
+[00:00:15.340 --> 00:00:18.780] This is just a chip drop of three new products
+[00:00:18.780 --> 00:00:19.900] or three existing products.
+[00:00:19.900 --> 00:00:23.280] The 14 inch MacBook Pro, the iPad Pro,
+[00:00:23.280 --> 00:00:24.900] as well as the Vision Pro.
+[00:00:24.900 --> 00:00:27.900] And this is the new Vision Pro generation too
+[00:00:27.900 --> 00:00:30.560] with the double Nets strap.
+[00:00:30.560 --> 00:00:32.660] Now this chip is supposed to be really damn good
+[00:00:32.660 --> 00:00:33.500] according to Apple.
+[00:00:33.500 --> 00:00:35.740] The year on year gains have been very significant.
+[00:00:35.740 --> 00:00:38.160] The M1 was already really good, but with M5
+[00:00:38.160 --> 00:00:40.700] we now have over double the performance of M1
+[00:00:40.700 --> 00:00:42.300] and we now have the fastest single core
+[00:00:42.300 --> 00:00:43.380] we've seen in the industry.
+[00:00:43.380 --> 00:00:45.060] And it's all done in the same power envelope.
+[00:00:45.060 --> 00:00:47.940] And the thing I find interesting and just funny
+[00:00:47.940 --> 00:00:49.940] is that if this was any other company,
+[00:00:49.940 --> 00:00:53.780] like imagine Intel or Qualcomm came out with this new chip
+[00:00:53.780 --> 00:00:55.940] and it was the fastest single core performance
+[00:00:55.940 --> 00:00:57.380] we'd seen in the industry,
+[00:00:57.380 --> 00:00:59.880] they would be billboards of Intel
+[00:00:59.880 --> 00:01:02.380] congratulating themselves as to how amazing they were.
+[00:01:02.380 --> 00:01:03.900] Like there was a time in 2015,
+[00:01:03.900 --> 00:01:05.300] just when I started YouTube,
+[00:01:05.300 --> 00:01:08.460] when Intel put out these brand new chips year after year,
+[00:01:08.460 --> 00:01:12.020] it was like, I think it was SkyLink and then KBLink
+[00:01:12.020 --> 00:01:14.060] and then CoffeeLink and then CoffeeLinkR.
+[00:01:14.060 --> 00:01:15.540] And it was like year after year
+[00:01:15.540 --> 00:01:17.860] of five to seven percent improvement a year.
+[00:01:17.860 --> 00:01:19.460] And they were like, we are so good.
+[00:01:19.460 --> 00:01:21.580] Look at our brand new chip, it is five percent better.
+[00:01:21.580 --> 00:01:22.980] And they would make a big deal out of it.
+[00:01:22.980 --> 00:01:24.740] And for Apple to drop this,
+[00:01:24.740 --> 00:01:28.340] a 15% CPU bump and a 30% GPU bump
+[00:01:28.340 --> 00:01:30.500] and to only do a website update,
+[00:01:30.500 --> 00:01:32.380] it's like Apple's board of winning.
+[00:01:32.380 --> 00:01:35.340] Now, I think for Apple, they recognize that,
+[00:01:35.340 --> 00:01:37.460] like I'm sure they'd love to sell millions of these
+[00:01:37.460 --> 00:01:39.620] and I'm sure they'd love to advertise it like crazy
+[00:01:39.620 --> 00:01:41.300] and try to con people into buying the new one.
+[00:01:41.300 --> 00:01:44.740] But I think they realize that because Apple Silicon,
+[00:01:44.740 --> 00:01:47.100] like M1 was already so good,
+[00:01:47.100 --> 00:01:49.420] not a lot of people are actually looking to upgrade
+[00:01:49.420 --> 00:01:51.500] from previous generations of Apple Silicon.
+[00:01:51.500 --> 00:01:53.660] But the M5 is really good.
+[00:01:53.660 --> 00:01:56.340] It's faster than the M4 in a bunch of scenarios,
+[00:01:56.340 --> 00:01:58.140] some more substantial than others.
+[00:01:58.140 --> 00:02:00.620] And I think a lot of that bump comes from the higher memory
+[00:02:00.620 --> 00:02:04.140] bandwidth, the M5 has like 25% higher memory bandwidth
+[00:02:04.140 --> 00:02:05.700] than the M4 base.
+[00:02:05.700 --> 00:02:07.580] And you'll also see some nice performance gains
+[00:02:07.580 --> 00:02:08.900] in GPU bound tasks.
+[00:02:08.900 --> 00:02:11.540] So like gaming is faster, 3D apps are faster.
+[00:02:11.540 --> 00:02:13.100] It's very program specific though.
+[00:02:13.100 --> 00:02:15.700] Not every app sees massive performance gains,
+[00:02:15.700 --> 00:02:18.500] but the biggest and most noticeable improvement
+[00:02:18.500 --> 00:02:20.300] is with AI workflows.
+[00:02:20.300 --> 00:02:23.060] So Max have become quite popular over recent years
+[00:02:23.060 --> 00:02:25.700] because of the, I guess the energy efficiency
+[00:02:25.700 --> 00:02:29.380] and also cost efficiency of certain Mac computers.
+[00:02:29.380 --> 00:02:34.100] And this M5 chip is quite good for certain local AI workflows,
+[00:02:34.100 --> 00:02:35.900] but it only gets up to 32 gigs of RAM.
+[00:02:35.900 --> 00:02:37.500] So if you want something more capable,
+[00:02:37.500 --> 00:02:39.380] you have to go for a different kind of chip.
+[00:02:39.380 --> 00:02:42.260] The SSD is faster on the M5 MacBook Pros
+[00:02:42.260 --> 00:02:44.420] and faster drives always help with performance.
+[00:02:44.420 --> 00:02:46.060] A couple notes on the connections.
+[00:02:46.060 --> 00:02:48.260] It's still Wi-Fi 6E, not Wi-Fi 7.
+[00:02:48.260 --> 00:02:49.860] And also the three USB-C ports,
+[00:02:49.860 --> 00:02:51.380] they are Thunderbolt 4.
+[00:02:51.380 --> 00:02:54.700] The MacBook Pros with M4 Pro and M4 Max chips
+[00:02:54.700 --> 00:02:55.820] support Thunderbolt 5,
+[00:02:55.820 --> 00:02:58.900] but most people do not need that type of connectivity.
+[00:02:58.900 --> 00:03:01.420] And I've interested in buying the first rule
+[00:03:01.420 --> 00:03:02.860] about buying MacBooks.
+[00:03:02.860 --> 00:03:04.340] I've said this in multiple videos.
+[00:03:04.340 --> 00:03:06.740] It's like if you're someone who's upgrading every year,
+[00:03:06.740 --> 00:03:07.660] you're doing it wrong.
+[00:03:07.660 --> 00:03:10.780] Like 100% do not upgrade MacBooks yearly.
+[00:03:10.780 --> 00:03:11.980] This is crazy.
+[00:03:11.980 --> 00:03:15.100] But the second thing is that if you're on the fence of like,
+[00:03:15.100 --> 00:03:16.820] you have a certain budget and you're deciding
+[00:03:16.820 --> 00:03:21.420] between more RAM or more storage or more like chip or GPU.
+[00:03:21.420 --> 00:03:23.980] I would always err on the side of like RAM.
+[00:03:23.980 --> 00:03:28.620] It's very rarely that you will be CPU or GPU bound
+[00:03:28.620 --> 00:03:29.860] and you're like, I can't do my work
+[00:03:29.860 --> 00:03:31.180] because I just don't have a strong enough chip.
+[00:03:31.180 --> 00:03:33.340] Like it's so rare that that's the case.
+[00:03:33.340 --> 00:03:35.340] If you're uncertain and you have the budget,
+[00:03:35.340 --> 00:03:38.060] I would always lean more towards RAM.
+[00:03:38.060 --> 00:03:40.420] The third thing, right now,
+[00:03:40.420 --> 00:03:44.140] if you're interested in buying a MacBook Pro or a MacBook,
+[00:03:44.140 --> 00:03:46.780] I would aim for like M2, M3 products.
+[00:03:46.820 --> 00:03:49.020] That's where you get the biggest discounts
+[00:03:49.020 --> 00:03:50.860] for what I would think would be the most,
+[00:03:50.860 --> 00:03:53.860] it's like it's that sweet spot of like price to performance.
+[00:03:53.860 --> 00:03:56.780] The M5 stuff, like it is the most expensive
+[00:03:56.780 --> 00:03:59.580] and for most users, you're not gonna see significant gains
+[00:03:59.580 --> 00:04:01.700] unless you're doing a lot of local AI.
+[00:04:01.700 --> 00:04:06.020] Okay, the iPad Pro, so this is the 13.3 inch device
+[00:04:06.020 --> 00:04:06.940] that I have here.
+[00:04:06.940 --> 00:04:09.260] This also got the new M5 chip
+[00:04:09.260 --> 00:04:11.940] and you get faster performance in apps and games.
+[00:04:11.940 --> 00:04:13.540] You get more consistent frameworks in games
+[00:04:13.540 --> 00:04:15.100] because you don't have to work as hard
+[00:04:15.140 --> 00:04:17.940] until to get those high frame rates with the more powerful chip.
+[00:04:17.940 --> 00:04:20.540] You get higher memory bandwidth on the M5 iPad Pro,
+[00:04:20.540 --> 00:04:23.500] you get more RAM, you get 12 gigs on the lower tier storage,
+[00:04:23.500 --> 00:04:25.980] 16 gigs you go for the higher tier storage units.
+[00:04:25.980 --> 00:04:28.220] I'll just get faster storage than before,
+[00:04:28.220 --> 00:04:30.740] 120 Hertz display out from the Thunderbolt port.
+[00:04:30.740 --> 00:04:32.820] You get Wi-Fi 7, you get fast charging.
+[00:04:32.820 --> 00:04:34.900] The faster charging is actually very noticeable
+[00:04:34.900 --> 00:04:37.140] when you compare to the M4 iPad Pro,
+[00:04:37.140 --> 00:04:39.980] but I for one never found any of the modern iPads
+[00:04:39.980 --> 00:04:41.580] be lacking in performance.
+[00:04:41.580 --> 00:04:44.140] Like ever since like M1 and up,
+[00:04:44.140 --> 00:04:45.780] it's just like they're so fast,
+[00:04:45.780 --> 00:04:47.180] like there's nothing that I do
+[00:04:47.180 --> 00:04:48.900] that I could ever stress these things out beyond.
+[00:04:48.900 --> 00:04:50.500] But if you are a performance fiend
+[00:04:50.500 --> 00:04:52.700] and you edit videos or do music protection
+[00:04:52.700 --> 00:04:55.820] for your tablet, the M5 product is now available.
+[00:04:55.820 --> 00:04:57.540] All right, lastly, the Vision Pro product.
+[00:04:57.540 --> 00:05:00.220] So this has all spin updated to M5.
+[00:05:00.220 --> 00:05:01.540] The weight has not changed
+[00:05:01.540 --> 00:05:04.740] despite having a three generation jump in silicon.
+[00:05:04.740 --> 00:05:06.340] So this has higher memory bandwidth,
+[00:05:06.340 --> 00:05:09.060] a much more capable GPUs who get higher refresh rates,
+[00:05:09.060 --> 00:05:09.980] higher pixel density,
+[00:05:09.980 --> 00:05:13.980] the entire visual experience is noticeably better on Gen 2.
+[00:05:13.980 --> 00:05:15.300] And also you get longer battery life
+[00:05:15.300 --> 00:05:18.660] for video playback with the more efficient M5 chip.
+[00:05:18.660 --> 00:05:21.140] Now, I am not a Vision Pro user.
+[00:05:21.140 --> 00:05:23.980] I wish I was, but I just can't edit videos on this thing
+[00:05:23.980 --> 00:05:25.860] and when it comes to like watching shows and stuff
+[00:05:25.860 --> 00:05:26.740] with my kids and wife,
+[00:05:26.740 --> 00:05:28.860] this feels like a very solitary experience
+[00:05:28.860 --> 00:05:29.980] anytime I've pulled it out.
+[00:05:29.980 --> 00:05:33.060] However, the spatial photos have always looked really cool
+[00:05:33.060 --> 00:05:33.900] on Vision Pro.
+[00:05:33.900 --> 00:05:36.140] You can take like regular 2D photos from your camera roll
+[00:05:36.140 --> 00:05:38.580] and then convert them into these spatial photos.
+[00:05:38.580 --> 00:05:41.060] And the M5 chip does it a little bit faster.
+[00:05:41.060 --> 00:05:44.580] Lastly, the strap, the new dual knit loop
+[00:05:44.580 --> 00:05:47.460] is so much better than the original solo knit.
+[00:05:47.460 --> 00:05:50.740] I cannot express how much better this thing is.
+[00:05:50.740 --> 00:05:53.180] The way this thing sits is so much more comfortable.
+[00:05:53.180 --> 00:05:55.180] It's heavier strap and there's a can of weight
+[00:05:55.180 --> 00:05:56.220] in the back now.
+[00:05:56.220 --> 00:05:57.460] And there's also a top strap
+[00:05:57.460 --> 00:05:59.180] which is gonna mess with your hair unfortunately.
+[00:05:59.180 --> 00:06:01.060] It does flatten it down a lot.
+[00:06:01.060 --> 00:06:03.220] But in terms of just like usability and comfort,
+[00:06:03.220 --> 00:06:04.620] this is so much better.
+[00:06:04.620 --> 00:06:05.940] And it is backwards compatible.
+[00:06:05.940 --> 00:06:08.500] If you want to, you can just pick up one of these.
+[00:06:08.500 --> 00:06:09.900] If you are a Vision Pro user
+[00:06:09.900 --> 00:06:13.180] and get it for your generation one product.
+[00:06:13.180 --> 00:06:16.020] But that is the M5 lineup, the MacBook Pro,
+[00:06:16.020 --> 00:06:17.860] an iPad Pro and the new Vision Pro
+[00:06:17.860 --> 00:06:19.700] of the crazy powerful chip.
+[00:06:19.700 --> 00:06:21.260] All right, hope you guys enjoyed the video.
