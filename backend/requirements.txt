@@ -7,3 +7,18 @@ fastapi>=0.104.1
 uvicorn>=0.24.0
 python-multipart>=0.0.6
 websockets>=12.0
+
+# For video and audio processing
+moviepy
+
+# For AI-powered transcription
+# Note: The first time you run the transcription, Whisper will download its model files.
+# You can choose different model sizes (tiny, base, small, medium, large).
+# The 'base' model is a good starting point.
+openai-whisper
+
+# The whisper library depends on torch for deep learning operations.
+torch
+
+# For progress bars during processing
+tqdm
