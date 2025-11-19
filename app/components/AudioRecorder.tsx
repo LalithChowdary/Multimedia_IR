@@ -2,7 +2,6 @@
 
 import { useState, useRef, useEffect } from 'react';
 
-// --- Type Definitions ---
 interface MatchResult {
     match: boolean;
     song_id?: string;
@@ -12,32 +11,20 @@ interface MatchResult {
     message?: string;
 }
 
-// --- Component ---
 export default function AudioRecorder() {
-    // --- State Management ---
     const [isRecording, setIsRecording] = useState(false);
-    const [status, setStatus] = useState('Idle. Press Start to begin.');
+    const [status, setStatus] = useState('');
     const [match, setMatch] = useState<MatchResult | null>(null);
     const [isListening, setIsListening] = useState(false);
 
-    // --- Refs for Audio and WebSocket Objects ---
-    // We use refs to hold objects that don't need to trigger re-renders
-    // when they change, like the WebSocket or AudioContext.
     const socketRef = useRef<WebSocket | null>(null);
     const audioContextRef = useRef<AudioContext | null>(null);
     const audioStreamRef = useRef<MediaStream | null>(null);
     const audioWorkletNodeRef = useRef<AudioWorkletNode | null>(null);
 
-    // --- Effect for Cleanup ---
-    // This ensures that we close connections and release the microphone
-    // when the component is unmounted.
     useEffect(() => {
-        return () => {
-            stopRecording();
-        };
+        return () => stopRecording();
     }, []);
-
-    // --- Core Functions ---
 
     const startRecording = async () => {
         setMatch(null);
@@ -45,216 +32,183 @@ export default function AudioRecorder() {
         setIsListening(false);
 
         try {
-            // 1. Get Microphone Access
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
             audioStreamRef.current = stream;
 
-            // 2. Create and Configure AudioContext
-            // Use 8KHz sample rate to match Shazam algorithm (as per Wang's paper)
             const context = new AudioContext({ sampleRate: 8000 });
             audioContextRef.current = context;
 
-            // 3. Load the AudioWorklet
             await context.audioWorklet.addModule('/audio-processor.js');
             const workletNode = new AudioWorkletNode(context, 'audio-processor');
             audioWorkletNodeRef.current = workletNode;
 
-            // 4. Setup WebSocket Connection
             const ws = new WebSocket('ws://127.0.0.1:8000/ws/audio');
             socketRef.current = ws;
 
             ws.onopen = () => {
-                console.log('WebSocket connection established.');
-                setStatus('Recording... Listening for music.');
+                setStatus('Listening...');
                 setIsRecording(true);
                 setIsListening(true);
-
-                // 5. Connect the Audio Pipeline
-                // Microphone -> AudioWorklet -> WebSocket
                 const source = context.createMediaStreamSource(stream);
                 source.connect(workletNode);
-
-                // 6. Handle Messages from the AudioWorklet
-                // The worklet sends us processed audio chunks (Int16Array).
                 workletNode.port.onmessage = (event) => {
-                    if (ws.readyState === WebSocket.OPEN) {
-                        ws.send(event.data);
-                    }
+                    if (ws.readyState === WebSocket.OPEN) ws.send(event.data);
                 };
             };
 
-            // 7. Handle Messages from the Server (Continuous Updates)
             ws.onmessage = (event) => {
                 const result: MatchResult = JSON.parse(event.data);
-                console.log('Received from server:', result);
-                
                 if (result.match) {
-                    // Match found! Display it and continue listening
                     setMatch(result);
-                    if (result.confirmed) {
-                        setStatus('✓ Confirmed Match! Still listening...');
-                    } else {
-                        setStatus(result.message || 'Potential match detected...');
-                    }
+                    if (result.confirmed) setStatus('Match Confirmed');
+                    else setStatus('Analyzing...');
                 } else {
-                    // Still listening, no match yet
-                    setStatus(result.message || 'Listening for music...');
+                    setStatus('Listening...');
                 }
             };
 
-            ws.onerror = (error) => {
-                console.error('WebSocket error:', error);
-                setStatus('Error connecting to server. Please try again.');
+            ws.onerror = () => {
+                setStatus('Connection Error');
                 stopRecording();
             };
 
             ws.onclose = () => {
-                console.log('WebSocket connection closed.');
-                if (isRecording) {
-                    setStatus('Connection lost. Please try again.');
-                    stopRecording();
-                }
+                if (isRecording) stopRecording();
             };
 
         } catch (error) {
-            console.error('Error starting recording:', error);
-            setStatus('Could not start recording. Please grant microphone permission.');
+            console.error(error);
+            setStatus('Microphone Error');
         }
     };
 
     const stopRecording = () => {
-        if (socketRef.current) {
-            socketRef.current.close();
-            socketRef.current = null;
-        }
-        if (audioStreamRef.current) {
-            audioStreamRef.current.getTracks().forEach(track => track.stop());
-            audioStreamRef.current = null;
-        }
-        if (audioContextRef.current) {
-            audioContextRef.current.close();
-            audioContextRef.current = null;
-        }
-        if (audioWorkletNodeRef.current) {
-            audioWorkletNodeRef.current.port.close();
-            audioWorkletNodeRef.current = null;
-        }
+        socketRef.current?.close();
+        audioStreamRef.current?.getTracks().forEach(t => t.stop());
+        audioContextRef.current?.close();
+        audioWorkletNodeRef.current?.port.close();
+        
         setIsRecording(false);
         setIsListening(false);
-        if (status.startsWith('Recording') || status.startsWith('Match found')) {
-            setStatus('Idle. Press Start to begin.');
-        }
+        setStatus('');
     };
 
-    const handleToggleRecording = () => {
-        if (isRecording) {
-            stopRecording();
-        } else {
-            startRecording();
-        }
-    };
+    const handleToggle = () => isRecording ? stopRecording() : startRecording();
 
-    // --- UI Rendering ---
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', fontFamily: 'sans-serif', color: '#333', padding: '20px' }}>
-            <h1>🎵 Real-time Audio Recognition</h1>
-            
-            {/* Status Display */}
+        <div style={{ 
+            display: 'flex', 
+            flexDirection: 'column', 
+            alignItems: 'center', 
+            justifyContent: 'center',
+            height: '100%',
+            width: '100%',
+            fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
+        }}>
+            {/* Status Pill */}
             <div style={{ 
-                marginBottom: '20px', 
-                padding: '15px 30px', 
-                backgroundColor: isListening ? '#e8f5e9' : '#f5f5f5',
-                borderRadius: '10px',
-                border: isListening ? '2px solid #4caf50' : '2px solid #ddd',
-                minWidth: '300px',
-                textAlign: 'center'
+                height: '24px',
+                marginBottom: '40px',
+                opacity: status ? 1 : 0,
+                transition: 'opacity 0.3s ease'
             }}>
-                <p style={{ margin: 0, fontSize: '16px', fontWeight: '500' }}>
-                    {isListening && '🎤 '}
+                <span style={{ 
+                    fontSize: '13px', 
+                    fontWeight: 600, 
+                    letterSpacing: '0.5px',
+                    color: isListening ? '#e74c3c' : '#999',
+                    textTransform: 'uppercase'
+                }}>
                     {status}
-                </p>
+                </span>
             </div>
 
-            {/* Record/Stop Button */}
+            {/* Main Record Button */}
             <button
-                onClick={handleToggleRecording}
+                onClick={handleToggle}
                 style={{
-                    padding: '15px 40px',
-                    fontSize: '18px',
-                    cursor: 'pointer',
-                    borderRadius: '50px',
+                    width: '120px',
+                    height: '120px',
+                    borderRadius: '50%',
                     border: 'none',
-                    backgroundColor: isRecording ? '#e74c3c' : '#2ecc71',
-                    color: 'white',
-                    fontWeight: 'bold',
-                    transition: 'all 0.3s',
-                    boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
-                    minWidth: '150px'
-                }}
-                onMouseEnter={(e) => {
-                    e.currentTarget.style.transform = 'scale(1.05)';
-                }}
-                onMouseLeave={(e) => {
-                    e.currentTarget.style.transform = 'scale(1)';
+                    background: isRecording ? '#fff' : '#000',
+                    color: isRecording ? '#000' : '#fff',
+                    cursor: 'pointer',
+                    boxShadow: isRecording 
+                        ? '0 0 0 4px rgba(231, 76, 60, 0.2), 0 10px 40px rgba(231, 76, 60, 0.4)' 
+                        : '0 10px 30px rgba(0,0,0,0.2)',
+                    position: 'relative',
+                    transition: 'all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    outline: 'none'
                 }}
             >
-                {isRecording ? '⏹ Stop' : '▶ Start'}
+                {isRecording ? (
+                    <div style={{ 
+                        width: '40px', 
+                        height: '40px', 
+                        background: '#e74c3c', 
+                        borderRadius: '4px',
+                        animation: 'pulse 1.5s infinite'
+                    }} />
+                ) : (
+                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+                        <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                        <line x1="12" y1="19" x2="12" y2="23"></line>
+                        <line x1="8" y1="23" x2="16" y2="23"></line>
+                    </svg>
+                )}
             </button>
 
-            {/* Match Result Display */}
-            {match && match.match && (
-                <div style={{ 
-                    marginTop: '30px', 
-                    padding: '25px', 
-                    border: match.confirmed ? '3px solid #2e7d32' : '2px solid #ff9800', 
-                    borderRadius: '15px', 
-                    backgroundColor: match.confirmed ? '#e8f5e9' : '#fff3e0',
-                    minWidth: '400px',
-                    boxShadow: match.confirmed 
-                        ? '0 4px 12px rgba(46, 125, 50, 0.3)' 
-                        : '0 4px 12px rgba(255, 152, 0, 0.2)'
-                }}>
-                    <h2 style={{ 
-                        margin: '0 0 15px 0', 
-                        color: match.confirmed ? '#2e7d32' : '#e65100' 
-                    }}>
-                        {match.confirmed ? '✓✓ Confirmed Match!' : '? Potential Match'}
-                    </h2>
-                    <div style={{ fontSize: '16px' }}>
-                        <p style={{ margin: '10px 0' }}>
-                            <strong>Song:</strong> <span style={{ color: '#1976d2' }}>{match.song_id}</span>
-                        </p>
-                        <p style={{ margin: '10px 0' }}>
-                            <strong>Confidence:</strong> <span style={{ color: '#f57c00' }}>{match.confidence}</span>
-                        </p>
-                        {match.offset !== undefined && (
-                            <p style={{ margin: '10px 0' }}>
-                                <strong>Time Offset:</strong> <span style={{ color: '#7b1fa2' }}>{match.offset} frames</span>
-                            </p>
-                        )}
-                        {!match.confirmed && (
-                            <p style={{ margin: '15px 0 0 0', fontSize: '14px', color: '#e65100', fontStyle: 'italic' }}>
-                                Waiting for confirmation across multiple windows...
-                            </p>
-                        )}
-                    </div>
-                </div>
-            )}
-
-            {/* Info Text */}
+            {/* Result Display */}
             <div style={{ 
-                marginTop: '30px', 
-                padding: '15px', 
-                backgroundColor: '#f9f9f9', 
-                borderRadius: '10px',
-                maxWidth: '500px',
-                textAlign: 'center'
+                marginTop: '60px', 
+                textAlign: 'center',
+                minHeight: '100px',
+                opacity: match && match.match ? 1 : 0,
+                transform: match && match.match ? 'translateY(0)' : 'translateY(20px)',
+                transition: 'all 0.5s cubic-bezier(0.25, 0.8, 0.25, 1)'
             }}>
-                <p style={{ margin: 0, fontSize: '14px', color: '#666' }}>
-                    <strong>Shazam Algorithm</strong> - Using 10-second windows with 3-second overlap.
-                    Matches are confirmed when detected consistently across multiple windows.
-                </p>
+                {match && match.match && (
+                    <div>
+                        <h2 style={{ 
+                            margin: '0 0 10px 0', 
+                            fontSize: '28px', 
+                            fontWeight: 700, 
+                            color: '#222',
+                            letterSpacing: '-0.5px'
+                        }}>
+                            {match.song_id?.replace(/_/g, ' ').replace(/\.(mp3|wav)$/, '')}
+                        </h2>
+                        <p style={{ 
+                            margin: 0, 
+                            fontSize: '14px', 
+                            color: '#888',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '10px'
+                        }}>
+                            {match.confirmed ? (
+                                <span style={{ color: '#2ecc71', fontWeight: 600 }}>✓ Confirmed</span>
+                            ) : (
+                                <span>Confidence: {match.confidence}</span>
+                            )}
+                        </p>
+                    </div>
+                )}
             </div>
+
+            <style jsx>{`
+                @keyframes pulse {
+                    0% { transform: scale(1); opacity: 1; }
+                    50% { transform: scale(0.9); opacity: 0.8; }
+                    100% { transform: scale(1); opacity: 1; }
+                }
+            `}</style>
         </div>
     );
 }

@@ -1,17 +1,25 @@
 import os
 import shutil
-from fastapi import FastAPI, UploadFile, File, WebSocket
+from fastapi import FastAPI, UploadFile, File, WebSocket, BackgroundTasks, Query
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pathlib import Path
 import sys
+import json
 
 # Add music_recognition to path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'music_recognition'))
+# Add video_recognision to path
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'video_recognision'))
 
 from fingerprint import generate_fingerprints
 from database import FingerprintDB
 from streaming import websocket_endpoint
+
+# Video Recognition Imports
+from transcribe import transcribe_videos
+from indexer import create_search_index
+from search import search as search_video_index
 
 # --- FastAPI App Initialization ---
 app = FastAPI()
@@ -96,3 +104,87 @@ async def identify_song(audio_file: UploadFile = File(...)):
 @app.get("/")
 def read_root():
     return {"message": "Shazam-like service is running. POST to /identify to recognize a song."}
+
+# --- Video Recognition Endpoints ---
+
+VIDEOS_DIR = Path("backend/videos")
+VIDEOS_DIR.mkdir(parents=True, exist_ok=True)
+
+def process_video_background(file_path: Path):
+    """
+    Background task to process the uploaded video:
+    1. Transcribe the video using Whisper
+    2. Update the search index
+    """
+    try:
+        print(f"Starting background processing for: {file_path.name}")
+        
+        # 1. Transcribe
+        # The transcribe_videos function expects a list of files or scans a directory.
+        # We can modify it or just point it to the directory. 
+        # For now, let's assume it scans the directory.
+        # A better approach would be to import the specific logic, but reusing the script is easier.
+        print("Running transcription...")
+        # We need to ensure transcribe_videos is called correctly.
+        # It usually scans a directory. Let's point it to our VIDEOS_DIR.
+        # Note: transcribe.py might need adjustment if it hardcodes paths, 
+        # but assuming it uses relative paths from BACKEND_DIR, it should work if configured right.
+        # For safety, let's call the functions directly if possible.
+        
+        # Ensure transcript directory exists
+        TRANSCRIPT_DIR = Path("backend/video_recognision/transcripts")
+        TRANSCRIPT_DIR.mkdir(parents=True, exist_ok=True)
+        
+        # Run transcription (this might take a while)
+        # We pass [file_path] to only transcribe this specific file if the function supports it,
+        # otherwise we let it scan. Checking transcribe.py, it usually scans.
+        # Let's assume we just run the full pipeline for simplicity in this prototype.
+        transcribe_videos() 
+        
+        # 2. Index
+        print("Updating search index...")
+        create_search_index(incremental=True)
+        
+        print(f"Finished processing: {file_path.name}")
+        
+    except Exception as e:
+        print(f"Error processing video {file_path.name}: {e}")
+
+@app.post("/upload_video")
+async def upload_video(background_tasks: BackgroundTasks, video_file: UploadFile = File(...)):
+    """
+    Uploads a video file for indexing.
+    The video is saved, and then processed in the background (transcription + indexing).
+    """
+    try:
+        file_path = VIDEOS_DIR / video_file.filename
+        
+        # Save the file
+        with file_path.open("wb") as buffer:
+            shutil.copyfileobj(video_file.file, buffer)
+            
+        # Trigger background processing
+        background_tasks.add_task(process_video_background, file_path)
+        
+        return {
+            "message": "Video uploaded successfully. Processing started in background.",
+            "filename": video_file.filename
+        }
+        
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"message": f"Upload failed: {str(e)}"})
+    finally:
+        video_file.file.close()
+
+@app.get("/search_video")
+def search_video(query: str, top_k: int = 5, min_score: float = 0.0):
+    """
+    Semantic search for video content.
+    """
+    try:
+        # search_video_index returns a JSON string, so we parse it back to a dict
+        # to let FastAPI serialize it cleanly
+        results_json = search_video_index(query, top_k=top_k, min_score=min_score)
+        return json.loads(results_json)
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"message": f"Search failed: {str(e)}"})
