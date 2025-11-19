@@ -83,10 +83,37 @@ export default function AudioRecorder() {
     };
 
     const stopRecording = () => {
-        socketRef.current?.close();
-        audioStreamRef.current?.getTracks().forEach(t => t.stop());
-        audioContextRef.current?.close();
-        audioWorkletNodeRef.current?.port.close();
+        if (socketRef.current) {
+            socketRef.current.close();
+            socketRef.current = null;
+        }
+        
+        if (audioStreamRef.current) {
+            audioStreamRef.current.getTracks().forEach(t => t.stop());
+            audioStreamRef.current = null;
+        }
+
+        if (audioContextRef.current) {
+            try {
+                if (audioContextRef.current.state !== 'closed') {
+                    audioContextRef.current.close();
+                }
+            } catch (e) {
+                console.error("Error closing AudioContext:", e);
+            }
+            audioContextRef.current = null;
+        }
+
+        if (audioWorkletNodeRef.current) {
+            // Worklet ports don't strictly need explicit closing if the context is closed,
+            // but it's good practice if supported.
+            try {
+                audioWorkletNodeRef.current.port.close();
+            } catch (e) {
+                // Ignore
+            }
+            audioWorkletNodeRef.current = null;
+        }
         
         setIsRecording(false);
         setIsListening(false);

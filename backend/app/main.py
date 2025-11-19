@@ -2,10 +2,12 @@ import os
 import shutil
 from fastapi import FastAPI, UploadFile, File, WebSocket, BackgroundTasks, Query
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from pathlib import Path
 import sys
 import json
+from moviepy.editor import VideoFileClip
 
 # Add music_recognition to path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'music_recognition'))
@@ -37,6 +39,13 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# --- Static Files Mounting ---
+# Serve videos and thumbnails directly
+# Videos will be available at /content/videos/filename.mp4
+# Thumbnails will be available at /content/thumbnails/filename.jpg
+app.mount("/content/videos", StaticFiles(directory="backend/videos"), name="videos")
+app.mount("/content/thumbnails", StaticFiles(directory="backend/thumbnails"), name="thumbnails")
 
 # --- Database Loading ---
 # Load the fingerprint database into memory when the app starts.
@@ -188,3 +197,49 @@ def search_video(query: str, top_k: int = 5, min_score: float = 0.0):
         return json.loads(results_json)
     except Exception as e:
         return JSONResponse(status_code=500, content={"message": f"Search failed: {str(e)}"})
+
+# --- Video Gallery Endpoints ---
+
+THUMBNAILS_DIR = Path("backend/thumbnails")
+THUMBNAILS_DIR.mkdir(parents=True, exist_ok=True)
+
+def generate_thumbnail_if_needed(video_path: Path):
+    """
+    Generates a thumbnail for a video if it doesn't exist.
+    Returns the relative path to the thumbnail.
+    """
+    try:
+        thumbnail_filename = video_path.stem + ".jpg"
+        thumbnail_path = THUMBNAILS_DIR / thumbnail_filename
+        
+        if not thumbnail_path.exists():
+            print(f"Generating thumbnail for {video_path.name}...")
+            clip = VideoFileClip(str(video_path))
+            # Save frame at 1 second (or midpoint if shorter)
+            capture_time = min(1.0, clip.duration / 2)
+            clip.save_frame(str(thumbnail_path), t=capture_time)
+            clip.close()
+            
+        return f"/content/thumbnails/{thumbnail_filename}"
+    except Exception as e:
+        print(f"Error generating thumbnail for {video_path.name}: {e}")
+        return None
+
+@app.get("/videos")
+def list_videos():
+    """
+    Returns a list of all available videos with their thumbnails and metadata.
+    """
+    videos = []
+    for video_file in VIDEOS_DIR.glob("*"):
+        if video_file.suffix.lower() in ['.mp4', '.mov', '.avi', '.mkv', '.webm']:
+            thumbnail_url = generate_thumbnail_if_needed(video_file)
+            
+            videos.append({
+                "filename": video_file.name,
+                "video_url": f"/content/videos/{video_file.name}",
+                "thumbnail_url": thumbnail_url,
+                "size_mb": round(video_file.stat().st_size / (1024 * 1024), 2)
+            })
+    
+    return {"videos": videos}

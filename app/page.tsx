@@ -9,13 +9,13 @@ export default function Home() {
 
   return (
     <main style={{
-      minHeight: "100vh",
+      height: "100vh", // Fixed height
       backgroundColor: "#ffffff",
       color: "#111",
       fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
       display: 'flex',
       flexDirection: 'column',
-      overflow: 'hidden'
+      overflow: 'hidden' // No body scroll
     }}>
       {/* Minimal Header */}
       <header style={{
@@ -79,46 +79,32 @@ export default function Home() {
         justifyContent: "center",
         alignItems: "center",
         padding: '20px',
-        position: 'relative'
+        overflow: 'hidden' // Prevent container scroll
       }}>
         <div style={{ 
           width: '100%', 
           maxWidth: '800px',
-          height: '600px',
+          height: '100%', // Fill height for internal scrolling
           position: 'relative'
         }}>
-            {/* Music Mode Container */}
-            <div style={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                width: '100%',
-                height: '100%',
-                opacity: mode === 'music' ? 1 : 0,
-                pointerEvents: mode === 'music' ? 'auto' : 'none',
-                transform: mode === 'music' ? 'scale(1)' : 'scale(0.95)',
-                transition: 'all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1)'
-            }}>
-                <AudioRecorder />
-            </div>
-
-            {/* Video Mode Container */}
-            <div style={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                width: '100%',
-                height: '100%',
-                opacity: mode === 'video' ? 1 : 0,
-                pointerEvents: mode === 'video' ? 'auto' : 'none',
-                transform: mode === 'video' ? 'scale(1)' : 'scale(0.95)',
-                transition: 'all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1)',
-                display: 'flex',
-                justifyContent: 'center',
-                paddingTop: '40px' // Align visually with recorder center
-            }}>
-                <VideoSearch />
-            </div>
+            {mode === 'music' ? (
+                <div style={{ 
+                    animation: 'fadeIn 0.4s ease',
+                    height: '100%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                }}>
+                    <AudioRecorder />
+                </div>
+            ) : (
+                <div style={{ 
+                    animation: 'fadeIn 0.4s ease',
+                    height: '100%'
+                }}>
+                    <VideoSearch />
+                </div>
+            )}
         </div>
       </div>
 
@@ -130,6 +116,13 @@ export default function Home() {
       }}>
         Multimedia Systems &copy; 2025
       </footer>
+
+      <style jsx>{`
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
     </main>
   );
 }
