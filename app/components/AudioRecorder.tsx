@@ -21,6 +21,14 @@ export default function AudioRecorder() {
     const audioContextRef = useRef<AudioContext | null>(null);
     const audioStreamRef = useRef<MediaStream | null>(null);
     const audioWorkletNodeRef = useRef<AudioWorkletNode | null>(null);
+    
+    // Visualization Refs
+    const analyserRef = useRef<AnalyserNode | null>(null);
+    const animationFrameRef = useRef<number | null>(null);
+    const ring1Ref = useRef<HTMLDivElement>(null);
+    const ring2Ref = useRef<HTMLDivElement>(null);
+    const ring3Ref = useRef<HTMLDivElement>(null);
+    const buttonRef = useRef<HTMLButtonElement>(null);
 
     useEffect(() => {
         return () => stopRecording();
@@ -28,7 +36,7 @@ export default function AudioRecorder() {
 
     const startRecording = async () => {
         setMatch(null);
-        setStatus('Connecting...');
+        setStatus('Listening...');
         setIsListening(false);
 
         try {
@@ -42,18 +50,28 @@ export default function AudioRecorder() {
             const workletNode = new AudioWorkletNode(context, 'audio-processor');
             audioWorkletNodeRef.current = workletNode;
 
+            // Setup Analyser for Visualization
+            const analyser = context.createAnalyser();
+            analyser.fftSize = 1024;
+            analyser.smoothingTimeConstant = 0.8;
+            analyserRef.current = analyser;
+
             const ws = new WebSocket('ws://127.0.0.1:8000/ws/audio');
             socketRef.current = ws;
 
             ws.onopen = () => {
-                setStatus('Listening...');
                 setIsRecording(true);
                 setIsListening(true);
+                
                 const source = context.createMediaStreamSource(stream);
                 source.connect(workletNode);
+                source.connect(analyser);
+
                 workletNode.port.onmessage = (event) => {
                     if (ws.readyState === WebSocket.OPEN) ws.send(event.data);
                 };
+
+                visualize();
             };
 
             ws.onmessage = (event) => {
@@ -82,7 +100,56 @@ export default function AudioRecorder() {
         }
     };
 
+    const visualize = () => {
+        if (!analyserRef.current) return;
+
+        const bufferLength = analyserRef.current.frequencyBinCount;
+        const dataArray = new Uint8Array(bufferLength);
+        analyserRef.current.getByteFrequencyData(dataArray);
+
+        // Calculate frequency bands
+        let bassSum = 0;
+        for (let i = 1; i < 10; i++) bassSum += dataArray[i];
+        const bass = bassSum / 9 / 255;
+
+        let midSum = 0;
+        for (let i = 10; i < 64; i++) midSum += dataArray[i];
+        const mid = midSum / 54 / 255;
+
+        let highSum = 0;
+        for (let i = 64; i < 200; i++) highSum += dataArray[i];
+        const high = highSum / 136 / 255;
+
+        // Apply transforms
+        if (ring1Ref.current) {
+            ring1Ref.current.style.transform = `scale(${1 + bass * 0.8})`;
+            ring1Ref.current.style.opacity = `${0.4 + bass * 0.6}`;
+        }
+
+        if (ring2Ref.current) {
+            ring2Ref.current.style.transform = `scale(${1 + mid * 1.4})`;
+            ring2Ref.current.style.opacity = `${0.2 + mid * 0.5}`;
+        }
+
+        if (ring3Ref.current) {
+            ring3Ref.current.style.transform = `scale(${1 + high * 1.8})`;
+            ring3Ref.current.style.opacity = `${0.1 + high * 0.4}`;
+        }
+
+        if (buttonRef.current) {
+            buttonRef.current.style.transform = `scale(${1 + bass * 0.15})`;
+            buttonRef.current.style.boxShadow = `0 10px 40px rgba(231, 76, 60, ${0.4 + bass * 0.6})`;
+        }
+
+        animationFrameRef.current = requestAnimationFrame(visualize);
+    };
+
     const stopRecording = () => {
+        if (animationFrameRef.current) {
+            cancelAnimationFrame(animationFrameRef.current);
+            animationFrameRef.current = null;
+        }
+
         if (socketRef.current) {
             socketRef.current.close();
             socketRef.current = null;
@@ -105,8 +172,6 @@ export default function AudioRecorder() {
         }
 
         if (audioWorkletNodeRef.current) {
-            // Worklet ports don't strictly need explicit closing if the context is closed,
-            // but it's good practice if supported.
             try {
                 audioWorkletNodeRef.current.port.close();
             } catch (e) {
@@ -115,6 +180,15 @@ export default function AudioRecorder() {
             audioWorkletNodeRef.current = null;
         }
         
+        // Reset rings
+        if (ring1Ref.current) ring1Ref.current.style.transform = 'scale(1)';
+        if (ring2Ref.current) ring2Ref.current.style.transform = 'scale(1)';
+        if (ring3Ref.current) ring3Ref.current.style.transform = 'scale(1)';
+        if (buttonRef.current) {
+            buttonRef.current.style.transform = 'scale(1)';
+            buttonRef.current.style.boxShadow = '0 10px 30px rgba(0,0,0,0.2)';
+        }
+
         setIsRecording(false);
         setIsListening(false);
         setStatus('');
@@ -135,9 +209,10 @@ export default function AudioRecorder() {
             {/* Status Pill */}
             <div style={{ 
                 height: '24px',
-                marginBottom: '40px',
+                marginBottom: '60px', // More space for the rings
                 opacity: status ? 1 : 0,
-                transition: 'opacity 0.3s ease'
+                transition: 'opacity 0.3s ease',
+                zIndex: 10
             }}>
                 <span style={{ 
                     fontSize: '13px', 
@@ -150,45 +225,73 @@ export default function AudioRecorder() {
                 </span>
             </div>
 
-            {/* Main Record Button */}
-            <button
-                onClick={handleToggle}
-                style={{
-                    width: '120px',
-                    height: '120px',
-                    borderRadius: '50%',
-                    border: 'none',
-                    background: isRecording ? '#fff' : '#000',
-                    color: isRecording ? '#000' : '#fff',
-                    cursor: 'pointer',
-                    boxShadow: isRecording 
-                        ? '0 0 0 4px rgba(231, 76, 60, 0.2), 0 10px 40px rgba(231, 76, 60, 0.4)' 
-                        : '0 10px 30px rgba(0,0,0,0.2)',
-                    position: 'relative',
-                    transition: 'all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    outline: 'none'
-                }}
-            >
-                {isRecording ? (
-                    <div style={{ 
-                        width: '40px', 
-                        height: '40px', 
-                        background: '#e74c3c', 
-                        borderRadius: '4px',
-                        animation: 'pulse 1.5s infinite'
-                    }} />
-                ) : (
-                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
-                        <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
-                        <line x1="12" y1="19" x2="12" y2="23"></line>
-                        <line x1="8" y1="23" x2="16" y2="23"></line>
-                    </svg>
-                )}
-            </button>
+            {/* Record Button Container with Rings */}
+            <div style={{ position: 'relative', width: '120px', height: '120px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                
+                {/* Visualization Rings */}
+                <div ref={ring3Ref} style={{
+                    position: 'absolute', width: '100%', height: '100%', borderRadius: '50%',
+                    backgroundColor: 'rgba(231, 76, 60, 0.2)',
+                    transition: 'transform 0.05s linear, opacity 0.05s linear',
+                    pointerEvents: 'none',
+                    zIndex: 1
+                }} />
+                <div ref={ring2Ref} style={{
+                    position: 'absolute', width: '100%', height: '100%', borderRadius: '50%',
+                    backgroundColor: 'rgba(231, 76, 60, 0.3)',
+                    transition: 'transform 0.05s linear, opacity 0.05s linear',
+                    pointerEvents: 'none',
+                    zIndex: 2
+                }} />
+                <div ref={ring1Ref} style={{
+                    position: 'absolute', width: '100%', height: '100%', borderRadius: '50%',
+                    backgroundColor: 'rgba(231, 76, 60, 0.4)',
+                    transition: 'transform 0.05s linear, opacity 0.05s linear',
+                    pointerEvents: 'none',
+                    zIndex: 3
+                }} />
+
+                {/* Main Button */}
+                <button
+                    ref={buttonRef}
+                    onClick={handleToggle}
+                    style={{
+                        width: '120px',
+                        height: '120px',
+                        borderRadius: '50%',
+                        border: 'none',
+                        background: isRecording ? '#fff' : '#000',
+                        color: isRecording ? '#000' : '#fff',
+                        cursor: 'pointer',
+                        position: 'relative',
+                        zIndex: 10, // Above rings
+                        boxShadow: isRecording 
+                            ? '0 0 0 2px rgba(231, 76, 60, 0.1)' 
+                            : '0 10px 30px rgba(0,0,0,0.2)',
+                        transition: 'all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        outline: 'none'
+                    }}
+                >
+                    {isRecording ? (
+                        <div style={{ 
+                            width: '30px', 
+                            height: '30px', 
+                            background: '#e74c3c', 
+                            borderRadius: '6px',
+                        }} />
+                    ) : (
+                        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+                            <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                            <line x1="12" y1="19" x2="12" y2="23"></line>
+                            <line x1="8" y1="23" x2="16" y2="23"></line>
+                        </svg>
+                    )}
+                </button>
+            </div>
 
             {/* Result Display */}
             <div style={{ 
@@ -197,7 +300,8 @@ export default function AudioRecorder() {
                 minHeight: '100px',
                 opacity: match && match.match ? 1 : 0,
                 transform: match && match.match ? 'translateY(0)' : 'translateY(20px)',
-                transition: 'all 0.5s cubic-bezier(0.25, 0.8, 0.25, 1)'
+                transition: 'all 0.5s cubic-bezier(0.25, 0.8, 0.25, 1)',
+                zIndex: 10
             }}>
                 {match && match.match && (
                     <div>
@@ -228,14 +332,6 @@ export default function AudioRecorder() {
                     </div>
                 )}
             </div>
-
-            <style jsx>{`
-                @keyframes pulse {
-                    0% { transform: scale(1); opacity: 1; }
-                    50% { transform: scale(0.9); opacity: 0.8; }
-                    100% { transform: scale(1); opacity: 1; }
-                }
-            `}</style>
         </div>
     );
 }
