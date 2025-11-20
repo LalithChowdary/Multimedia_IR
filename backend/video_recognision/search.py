@@ -82,6 +82,8 @@ def search(
     
     # Process results
     results = []
+    seen_videos = set()
+    
     for idx, score in zip(indices[0], distances[0]):
         if idx == -1:  # FAISS returns -1 for missing results
             continue
@@ -95,13 +97,26 @@ def search(
         if score < min_score:
             continue
         
+        # Title Boosting: Increase score if query is in video title
+        boost_factor = 1.0
+        if query.lower() in meta['video_name'].lower():
+            boost_factor = 1.2  # 20% boost for title match
+            
+        final_score = score * boost_factor
+
+        # Grouping: Only show the highest scoring segment per video
+        if meta['video_name'] in seen_videos:
+            continue
+            
+        seen_videos.add(meta['video_name'])
+
         results.append({
             "video_name": meta['video_name'],
             "timestamp": f"{meta['start_time']} --> {meta['end_time']}",
             "start_seconds": meta['start_seconds'],
             "end_seconds": meta['end_seconds'],
             "text": meta['text'],
-            "similarity_score": round(float(score), 4),
+            "similarity_score": round(float(final_score), 4),
             "duration_seconds": round(meta['end_seconds'] - meta['start_seconds'], 2)
         })
         

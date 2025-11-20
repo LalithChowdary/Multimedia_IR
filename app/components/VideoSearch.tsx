@@ -237,7 +237,10 @@ export default function VideoSearch() {
                                     }}>
                                         <video
                                             src={`http://127.0.0.1:8000/content/videos/${encodeURIComponent(
-                                                videos.find(v => v.filename.startsWith(res.video_name))?.filename || res.video_name
+                                                videos.find(v => {
+                                                    const baseName = v.filename.replace(/\.[^/.]+$/, "");
+                                                    return res.video_name.includes(baseName);
+                                                })?.filename || res.video_name
                                             )}#t=${res.start_seconds},${res.end_seconds}`}
                                             controls
                                             playsInline
