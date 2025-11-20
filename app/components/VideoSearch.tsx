@@ -7,6 +7,8 @@ interface SearchResult {
     timestamp: string;
     text: string;
     similarity_score: number;
+    start_seconds: number;
+    end_seconds: number;
 }
 
 interface VideoItem {
@@ -23,6 +25,7 @@ export default function VideoSearch() {
     const [videos, setVideos] = useState<VideoItem[]>([]);
     const [isSearching, setIsSearching] = useState(false);
     const [uploadStatus, setUploadStatus] = useState('');
+    const [playingVideo, setPlayingVideo] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     // Fetch videos on load
@@ -114,7 +117,10 @@ export default function VideoSearch() {
                     marginBottom: '20px' 
                 }}>
                     <button 
-                        onClick={() => setActiveTab('search')}
+                        onClick={() => {
+                            setActiveTab('search');
+                            setPlayingVideo(null);
+                        }}
                         style={{
                             background: 'none',
                             border: 'none',
@@ -190,34 +196,63 @@ export default function VideoSearch() {
                     
                     {/* Search Results */}
                     {results.length > 0 ? (
-                         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                         <div style={{ display: 'flex', flexDirection: 'column', gap: '30px' }}>
                             {results.map((res, idx) => (
                                 <div key={idx} style={{ 
                                     padding: '0',
                                     transition: 'transform 0.2s ease'
                                 }}>
                                     <div style={{ 
-                                        fontSize: '12px', 
-                                        color: '#888', 
-                                        marginBottom: '6px',
+                                        fontSize: '13px', 
+                                        color: '#555', 
+                                        marginBottom: '10px',
                                         display: 'flex',
                                         alignItems: 'center',
-                                        gap: '8px'
+                                        justifyContent: 'space-between'
                                     }}>
-                                        <span style={{ fontWeight: 600, color: '#000' }}>{res.video_name}</span>
-                                        <span>•</span>
-                                        <span style={{ 
-                                            background: '#f0f0f0', 
-                                            padding: '2px 6px', 
-                                            borderRadius: '4px',
-                                            fontFamily: 'monospace'
-                                        }}>{res.timestamp}</span>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                            <span style={{ fontWeight: 600, color: '#000' }}>{res.video_name}</span>
+                                            <span style={{ 
+                                                background: '#e1f5fe', 
+                                                color: '#0277bd',
+                                                padding: '2px 8px', 
+                                                borderRadius: '12px',
+                                                fontFamily: 'monospace',
+                                                fontSize: '12px'
+                                            }}>{res.timestamp}</span>
+                                        </div>
+                                        <span style={{ fontSize: '12px', color: '#999' }}>
+                                            Match: {Math.round(res.similarity_score * 100)}%
+                                        </span>
                                     </div>
+                                    
+                                    {/* Video Player for Result */}
+                                    <div style={{
+                                        width: '100%',
+                                        aspectRatio: '16/9',
+                                        backgroundColor: '#000',
+                                        borderRadius: '12px',
+                                        overflow: 'hidden',
+                                        marginBottom: '10px'
+                                    }}>
+                                        <video
+                                            src={`http://127.0.0.1:8000/content/videos/${encodeURIComponent(
+                                                videos.find(v => v.filename.startsWith(res.video_name))?.filename || res.video_name
+                                            )}#t=${res.start_seconds},${res.end_seconds}`}
+                                            controls
+                                            playsInline
+                                            style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                                        />
+                                    </div>
+
                                     <p style={{ 
                                         margin: 0, 
-                                        fontSize: '15px', 
-                                        color: '#444', 
-                                        lineHeight: '1.6' 
+                                        fontSize: '14px', 
+                                        color: '#666', 
+                                        lineHeight: '1.5',
+                                        fontStyle: 'italic',
+                                        paddingLeft: '10px',
+                                        borderLeft: '3px solid #eee'
                                     }}>
                                         "{res.text}"
                                     </p>
@@ -239,46 +274,79 @@ export default function VideoSearch() {
                             }}>
                                 {videos.map((video, idx) => (
                                     <div key={idx} style={{ cursor: 'pointer' }}>
-                                        <div style={{ 
-                                            width: '100%', 
-                                            aspectRatio: '16/9', 
-                                            backgroundColor: '#eee', 
-                                            borderRadius: '12px', 
-                                            overflow: 'hidden',
-                                            marginBottom: '10px',
-                                            position: 'relative'
-                                        }}>
-                                            {video.thumbnail_url ? (
-                                                <img 
-                                                    src={`http://127.0.0.1:8000${video.thumbnail_url}`} 
-                                                    alt={video.filename}
-                                                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                        <div 
+                                            onClick={() => setPlayingVideo(video.filename)}
+                                            style={{ 
+                                                width: '100%', 
+                                                aspectRatio: '16/9', 
+                                                backgroundColor: '#000', 
+                                                borderRadius: '12px', 
+                                                overflow: 'hidden',
+                                                marginBottom: '10px',
+                                                position: 'relative'
+                                            }}
+                                        >
+                                            {playingVideo === video.filename ? (
+                                                <video
+                                                    src={`http://127.0.0.1:8000${video.video_url}`}
+                                                    controls
+                                                    autoPlay
+                                                    muted
+                                                    playsInline
+                                                    style={{ width: '100%', height: '100%', objectFit: 'contain', backgroundColor: '#000' }}
                                                 />
                                             ) : (
-                                                <div style={{ 
-                                                    width: '100%', 
-                                                    height: '100%', 
-                                                    display: 'flex', 
-                                                    alignItems: 'center', 
-                                                    justifyContent: 'center',
-                                                    color: '#ccc'
-                                                }}>
-                                                    No Preview
-                                                </div>
+                                                <>
+                                                    {video.thumbnail_url ? (
+                                                        <img 
+                                                            src={`http://127.0.0.1:8000${video.thumbnail_url}`} 
+                                                            alt={video.filename}
+                                                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                                        />
+                                                    ) : (
+                                                        <div style={{ 
+                                                            width: '100%', 
+                                                            height: '100%', 
+                                                            display: 'flex', 
+                                                            alignItems: 'center', 
+                                                            justifyContent: 'center',
+                                                            color: '#ccc'
+                                                        }}>
+                                                            No Preview
+                                                        </div>
+                                                    )}
+                                                    <div style={{
+                                                        position: 'absolute',
+                                                        top: '50%',
+                                                        left: '50%',
+                                                        transform: 'translate(-50%, -50%)',
+                                                        width: '40px',
+                                                        height: '40px',
+                                                        borderRadius: '50%',
+                                                        backgroundColor: 'rgba(0,0,0,0.6)',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                        color: 'white',
+                                                        fontSize: '20px'
+                                                    }}>
+                                                        ▶
+                                                    </div>
+                                                    <div style={{
+                                                        position: 'absolute',
+                                                        bottom: '8px',
+                                                        right: '8px',
+                                                        background: 'rgba(0,0,0,0.7)',
+                                                        color: 'white',
+                                                        fontSize: '10px',
+                                                        padding: '2px 6px',
+                                                        borderRadius: '4px',
+                                                        fontWeight: 600
+                                                    }}>
+                                                        VIDEO
+                                                    </div>
+                                                </>
                                             )}
-                                            <div style={{
-                                                position: 'absolute',
-                                                bottom: '8px',
-                                                right: '8px',
-                                                background: 'rgba(0,0,0,0.7)',
-                                                color: 'white',
-                                                fontSize: '10px',
-                                                padding: '2px 6px',
-                                                borderRadius: '4px',
-                                                fontWeight: 600
-                                            }}>
-                                                VIDEO
-                                            </div>
                                         </div>
                                         <div style={{ fontSize: '14px', fontWeight: 600, color: '#222', marginBottom: '4px', lineHeight: '1.3' }}>
                                             {video.filename.replace(/\.[^/.]+$/, "")}

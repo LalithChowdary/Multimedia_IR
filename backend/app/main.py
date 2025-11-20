@@ -225,6 +225,12 @@ def generate_thumbnail_if_needed(video_path: Path):
         print(f"Error generating thumbnail for {video_path.name}: {e}")
         return None
 
+from urllib.parse import quote
+
+# ... (keep existing imports)
+
+# ...
+
 @app.get("/videos")
 def list_videos():
     """
@@ -235,10 +241,20 @@ def list_videos():
         if video_file.suffix.lower() in ['.mp4', '.mov', '.avi', '.mkv', '.webm']:
             thumbnail_url = generate_thumbnail_if_needed(video_file)
             
+            # Encode URLs to handle spaces and special characters
+            encoded_video_url = f"/content/videos/{quote(video_file.name)}"
+            encoded_thumbnail_url = quote(thumbnail_url) if thumbnail_url else None
+            # Note: generate_thumbnail_if_needed returns a path starting with /, so we need to be careful.
+            # Actually, generate_thumbnail_if_needed returns f"/content/thumbnails/{thumbnail_filename}"
+            # We should encode just the filename part or the whole path if we are careful.
+            # Let's fix generate_thumbnail_if_needed to return encoded URL or encode here.
+            
+            # Better approach: Encode the filename components.
+            
             videos.append({
                 "filename": video_file.name,
-                "video_url": f"/content/videos/{video_file.name}",
-                "thumbnail_url": thumbnail_url,
+                "video_url": f"/content/videos/{quote(video_file.name)}",
+                "thumbnail_url": f"/content/thumbnails/{quote(video_file.stem)}.jpg" if thumbnail_url else None,
                 "size_mb": round(video_file.stat().st_size / (1024 * 1024), 2)
             })
     
