@@ -119,14 +119,19 @@ def read_root():
 VIDEOS_DIR = Path("backend/videos")
 VIDEOS_DIR.mkdir(parents=True, exist_ok=True)
 
+# Global dictionary to store processing status
+processing_status = {}
+
 def process_video_background(file_path: Path):
     """
     Background task to process the uploaded video:
     1. Transcribe the video using Whisper
     2. Update the search index
     """
+    filename = file_path.name
     try:
-        print(f"Starting background processing for: {file_path.name}")
+        print(f"Starting background processing for: {filename}")
+        processing_status[filename] = "Starting..."
         
         # 1. Transcribe
         # The transcribe_videos function expects a list of files or scans a directory.
@@ -134,6 +139,8 @@ def process_video_background(file_path: Path):
         # For now, let's assume it scans the directory.
         # A better approach would be to import the specific logic, but reusing the script is easier.
         print("Running transcription...")
+        processing_status[filename] = "Transcribing..."
+        
         # We need to ensure transcribe_videos is called correctly.
         # It usually scans a directory. Let's point it to our VIDEOS_DIR.
         # Note: transcribe.py might need adjustment if it hardcodes paths, 
@@ -152,12 +159,23 @@ def process_video_background(file_path: Path):
         
         # 2. Index
         print("Updating search index...")
+        processing_status[filename] = "Indexing..."
         create_search_index(incremental=True)
         
-        print(f"Finished processing: {file_path.name}")
+        print(f"Finished processing: {filename}")
+        processing_status[filename] = "Complete"
         
     except Exception as e:
-        print(f"Error processing video {file_path.name}: {e}")
+        print(f"Error processing video {filename}: {e}")
+        processing_status[filename] = f"Error: {str(e)}"
+
+@app.get("/status/{filename}")
+def get_status(filename: str):
+    """
+    Returns the processing status of a video file.
+    """
+    status = processing_status.get(filename, "Unknown")
+    return {"status": status}
 
 @app.post("/upload_video")
 async def upload_video(background_tasks: BackgroundTasks, video_file: UploadFile = File(...)):

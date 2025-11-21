@@ -1,0 +1,113 @@
+[00:00:00.000 --> 00:00:04.320] The air evolution ahead will be radically different from what most people expect.
+[00:00:05.760 --> 00:00:09.280] But it will be very similar to revolutions that have come before this.
+[00:00:10.640 --> 00:00:13.280] We recently hosted the world's top AI investor,
+[00:00:13.280 --> 00:00:16.080] Heymanth Mohapatra from LightSpeed for a conversation.
+[00:00:16.080 --> 00:00:19.520] And what he told us about these cycles shocked us.
+[00:00:19.520 --> 00:00:20.560] What is the resource now?
+[00:00:20.560 --> 00:00:24.480] It used to be oil droplets and CPU cycles and GPU cycles in the late 90s,
+[00:00:24.480 --> 00:00:25.280] only 2000s.
+[00:00:25.280 --> 00:00:26.800] And now it is a ****.
+[00:00:26.880 --> 00:00:33.120] That realization led us to study what he once told us about the last 100 years of egg revolutions.
+[00:00:33.120 --> 00:00:38.160] And what we discovered changed everything we thought we knew about the AI's future.
+[00:00:40.960 --> 00:00:43.840] We are now a part of the Zero-Dum Media Network.
+[00:00:44.560 --> 00:00:49.120] When we talk into history, we found that this exact pattern has happened twice before,
+[00:00:49.120 --> 00:00:53.280] with oil in 1901 and semiconductors in 1987.
+[00:00:53.280 --> 00:00:59.040] Each time, it has followed an identical three-phase cycle that no one saw coming
+[00:00:59.040 --> 00:01:00.640] until it was too late.
+[00:01:00.640 --> 00:01:03.520] Let's first start with looking at the oil super cycle.
+[00:01:03.520 --> 00:01:06.160] It started with the extractive phase in 1901.
+[00:01:06.160 --> 00:01:09.760] See before spindle top happened, oil was scarce in the US.
+[00:01:09.760 --> 00:01:14.880] Then boom, 100,000 barrels per day emerged from a single well.
+[00:01:14.880 --> 00:01:18.000] That was more than the entire world combined.
+[00:01:18.000 --> 00:01:21.200] Standard oil dominated this extractive phase of oil.
+[00:01:21.200 --> 00:01:27.280] And by 1904, they controlled 91% of production and 85% of oil sales.
+[00:01:27.280 --> 00:01:31.680] Standard oil became so profitable that its founder John D. Rockefeller became the
+[00:01:31.680 --> 00:01:33.280] wealthiest American in history.
+[00:01:33.280 --> 00:01:38.560] Rockefeller built infrastructure, so refineries, pipelines and the resource became cheap
+[00:01:38.560 --> 00:01:42.320] and abundant, like we said, that happens in the extractive phase.
+[00:01:42.320 --> 00:01:44.800] In 1920s, the distributor phase started.
+[00:01:44.800 --> 00:01:50.800] Now, once oil became cheap and available, companies like Ford used it to power cars at scale.
+[00:01:50.800 --> 00:01:56.880] See, Ford introduced the assembly line in 1913 and by the late 1920s, they had sold 15
+[00:01:56.880 --> 00:02:01.200] million model teas, peaking at about 2 million cars per year.
+[00:02:01.200 --> 00:02:05.920] By the mid 1920s, Ford controlled 60% of the automobile market,
+[00:02:05.920 --> 00:02:08.960] so dominant that they barely needed to advertise.
+[00:02:08.960 --> 00:02:13.520] Now, oil companies saw automobiles as the first mass use case for oil.
+[00:02:13.520 --> 00:02:16.320] Then, GM's Alfred Sloan changed the game.
+[00:02:16.320 --> 00:02:19.440] While Ford famously said, customers could have any color,
+[00:02:19.440 --> 00:02:23.520] so long as it is black, Sloan introduced planned obsolescence,
+[00:02:23.520 --> 00:02:28.480] campaigning for car owners to discard their perfectly functioning cars twice every year,
+[00:02:28.480 --> 00:02:31.840] for newer and more stylish models, built by GM.
+[00:02:31.840 --> 00:02:37.520] Over the next two decades, GM would go on to capture 40% of market share in the US,
+[00:02:37.520 --> 00:02:41.840] while Ford dropped from 60% market share to just about 20%.
+[00:02:41.840 --> 00:02:47.040] At peak, the world had around 500 car companies globally.
+[00:02:47.120 --> 00:02:51.920] That is what we mean when we say the distributive phase is one by salespeople.
+[00:02:51.920 --> 00:02:57.280] And finally, by 1960s, we entered oil's destructive phase in the super cycle.
+[00:02:57.280 --> 00:03:02.080] OPEC was formed to artificially control oil prices because the market was very saturated.
+[00:03:02.080 --> 00:03:06.560] US soil production peaked at 9.5 million barrels per day in 1970,
+[00:03:06.560 --> 00:03:09.680] then declined through the 1980s and the 90s.
+[00:03:09.680 --> 00:03:13.360] Of those 500 car companies that once existed, most died.
+[00:03:13.360 --> 00:03:17.840] Even though oil prices went up from 1990s to 2020s,
+[00:03:17.840 --> 00:03:20.720] investing in oil and lices gave flat returns,
+[00:03:20.720 --> 00:03:26.800] there was a value that had moved away from oil extraction towards software and semiconductors.
+[00:03:26.800 --> 00:03:32.160] This phenomenon gave birth to the CPU super cycle starting in the 1960s.
+[00:03:32.160 --> 00:03:38.640] See, companies like Fairchild, Intel and AMD spent 30 years doing R&D to make CPUs cheap.
+[00:03:38.720 --> 00:03:45.760] In 1997, the global semiconductor market was worth 33 billion and grew to 51 billion by 1990.
+[00:03:45.760 --> 00:03:48.560] Intel released the Pentium series in 1993.
+[00:03:48.560 --> 00:03:55.600] From 1993 to 1996, the semiconductor market grew 30% per year during the Windows PC boom.
+[00:03:55.600 --> 00:03:56.560] And who won?
+[00:03:56.560 --> 00:04:01.600] There was chip makers like Intel, AMD, NEC, Toshiba and Samsung.
+[00:04:01.600 --> 00:04:03.840] One CPU cycle became cheap.
+[00:04:03.840 --> 00:04:06.400] Software companies started to distribute this value.
+[00:04:06.400 --> 00:04:09.440] And so the distributed phase of the CPU cycle started.
+[00:04:09.440 --> 00:04:12.320] Companies like Microsoft, Amazon, Google, Facebook,
+[00:04:12.320 --> 00:04:18.160] Build Software on top of these cheap CPU cycles and took an objective to put a computer in every home
+[00:04:18.160 --> 00:04:20.160] and internet in every device.
+[00:04:20.160 --> 00:04:25.600] In this phase, software companies captured 10x more value than chip makers.
+[00:04:25.600 --> 00:04:29.280] This brings us to the destructive phase, the 2010s.
+[00:04:29.280 --> 00:04:33.040] By this time, every major software category had saturated.
+[00:04:33.120 --> 00:04:37.520] All were doing the same thing, competing on minor features, support and discounts.
+[00:04:37.520 --> 00:04:40.160] Heyman's call this the Malthusian blood bath.
+[00:04:40.160 --> 00:04:42.880] We know that the first golden age of software is over.
+[00:04:42.880 --> 00:04:46.160] Value had started moving from just software to AI.
+[00:04:46.160 --> 00:04:49.680] And we now have entered the AI super cycle.
+[00:04:49.680 --> 00:04:53.440] The early 2020s kickstarted AI's extractive phase.
+[00:04:53.440 --> 00:04:58.960] Companies like Nvidia, OpenAI and Anthropic are spending billions making AI tokens
+[00:04:58.960 --> 00:05:01.280] and intelligence cheap and accessible.
+[00:05:01.280 --> 00:05:02.480] And the numbers tell the story.
+[00:05:02.560 --> 00:05:06.000] AI investment in 2024 cost 250 billion dollars.
+[00:05:06.000 --> 00:05:10.240] Nvidia went from 2 trillion to 3 trillion market cap in just 96 days.
+[00:05:10.240 --> 00:05:15.040] And AI adoption is exploding with 78% of all orgs using AI.
+[00:05:15.040 --> 00:05:16.480] Now, who's winning this phase?
+[00:05:16.480 --> 00:05:19.120] AI infrastructure companies like Nvidia and AMD,
+[00:05:19.120 --> 00:05:20.640] because they're building infrastructure.
+[00:05:20.640 --> 00:05:24.240] And companies like OpenAI and Anthropic, because they're building models.
+[00:05:24.240 --> 00:05:27.840] All of them are making intelligence cheap and abundant.
+[00:05:27.840 --> 00:05:32.080] Very similar to the oil and semiconductor companies in the past.
+[00:05:32.160 --> 00:05:37.280] Starting now, we are entering the early distribution phase of the AI super cycle.
+[00:05:37.280 --> 00:05:41.200] Microsoft made over 10 billion dollars in AI revenue in 2024.
+[00:05:41.200 --> 00:05:43.600] The fastest product ramp in their history.
+[00:05:43.600 --> 00:05:47.280] Soft bank and master's use are taking away their money from Nvidia
+[00:05:47.280 --> 00:05:49.200] and investing it in OpenAI.
+[00:05:49.200 --> 00:05:52.480] Google now ships 25% of its code using AI generation.
+[00:05:52.480 --> 00:05:56.160] Clarenize planning to cut its workforce by 50% using AI.
+[00:05:56.160 --> 00:05:59.200] Some layers of AI are reaching commoditization.
+[00:05:59.200 --> 00:05:59.840] Think about it.
+[00:05:59.840 --> 00:06:03.360] Think of how hard it is to tell one AI generated image from another.
+[00:06:03.360 --> 00:06:06.560] Also, many AI founding teams are actually leaving their companies.
+[00:06:06.560 --> 00:06:09.440] For example, OpenAI has lost most of its founding team.
+[00:06:09.440 --> 00:06:14.000] This is a classic sign of transition from an R&D focused innovation phase
+[00:06:14.000 --> 00:06:16.240] to a more distribution focused phase.
+[00:06:16.240 --> 00:06:18.720] This begs the question once again.
+[00:06:18.720 --> 00:06:22.480] Who will win next in this AI super cycle?
+[00:06:22.480 --> 00:06:25.520] In simple words, AI apps.
+[00:06:25.520 --> 00:06:28.240] You'll see soon AI apps will be everywhere.
+[00:06:28.320 --> 00:06:31.280] There will be vertical players like AI doctors, assistants,
+[00:06:31.280 --> 00:06:35.440] co-pilates, companies that brand and distributed AI effectively will win
+[00:06:35.440 --> 00:06:37.360] and not the model builders.
+[00:06:37.360 --> 00:06:42.160] This is exactly like how Intel did not capture software's value
+[00:06:42.160 --> 00:06:43.920] during the internet super cycle.
+[00:06:43.920 --> 00:06:46.560] Eventually, of course, AI too will reach saturation
+[00:06:46.560 --> 00:06:49.360] and too many AI companies will do the same thing,
+[00:06:49.360 --> 00:06:52.400] commoditization, and we'll see a market blood path.
+[00:06:52.400 --> 00:06:55.440] Value will move to the next big innovation
+[00:06:55.440 --> 00:06:57.680] and the cycle will repeat.

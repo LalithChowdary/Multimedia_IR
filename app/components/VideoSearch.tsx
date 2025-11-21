@@ -24,6 +24,10 @@ export default function VideoSearch() {
     const [results, setResults] = useState<SearchResult[]>([]);
     const [videos, setVideos] = useState<VideoItem[]>([]);
     const [isSearching, setIsSearching] = useState(false);
+    const [processingFile, setProcessingFile] = useState<string | null>(null);
+    const [progressStatus, setProgressStatus] = useState('');
+    const [progressStep, setProgressStep] = useState(0);
+    
     const [uploadStatus, setUploadStatus] = useState('');
     const [playingVideo, setPlayingVideo] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -57,6 +61,46 @@ export default function VideoSearch() {
             setIsSearching(false);
         }
     };
+    useEffect(() => {
+        let intervalId: NodeJS.Timeout;
+
+        if (processingFile) {
+            intervalId = setInterval(async () => {
+                try {
+                    const response = await fetch(`http://127.0.0.1:8000/status/${processingFile}`);
+                    const data = await response.json();
+                    const status = data.status;
+                    
+                    setProgressStatus(status);
+
+                    // Map status to progress percentage
+                    if (status === 'Starting...') setProgressStep(10);
+                    else if (status === 'Transcribing...') setProgressStep(40);
+                    else if (status === 'Indexing...') setProgressStep(80);
+                    else if (status === 'Complete') {
+                        setProgressStep(100);
+                        setProcessingFile(null); // Stop polling
+                        setUploadStatus('Processing complete!');
+                        fetchVideos(); // Refresh list
+                    } else if (status.startsWith('Error')) {
+                        setProcessingFile(null);
+                        setUploadStatus(status);
+                    }
+                } catch (error) {
+                    console.error('Error polling status:', error);
+                }
+            }, 1000);
+        }
+
+        return () => {
+            if (intervalId) clearInterval(intervalId);
+        };
+    }, [processingFile]);
+
+    const handleClear = () => {
+        setQuery('');
+        setResults([]);
+    };
 
     const handleUpload = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -67,6 +111,7 @@ export default function VideoSearch() {
         formData.append('video_file', file);
 
         setUploadStatus('Uploading...');
+        setProgressStep(0);
         
         try {
             const response = await fetch('http://127.0.0.1:8000/upload_video', {
@@ -75,10 +120,10 @@ export default function VideoSearch() {
             });
             
             if (response.ok) {
-                setUploadStatus('Upload complete. Processing in background...');
+                const data = await response.json();
+                setUploadStatus('Upload complete. Processing...');
+                setProcessingFile(data.filename); // Start polling
                 if (fileInputRef.current) fileInputRef.current.value = '';
-                // Refresh video list after a delay
-                setTimeout(fetchVideos, 2000);
             } else {
                 setUploadStatus('Upload failed.');
             }
@@ -109,76 +154,96 @@ export default function VideoSearch() {
                 borderBottom: '1px solid rgba(0,0,0,0.05)',
                 flexShrink: 0 // Don't shrink
             }}>
-                {/* Minimal Tab Switcher */}
-                <div style={{ 
-                    display: 'flex', 
-                    justifyContent: 'center', 
-                    gap: '40px', 
-                    marginBottom: '20px' 
-                }}>
-                    <button 
-                        onClick={() => {
-                            setActiveTab('search');
-                            setPlayingVideo(null);
-                        }}
-                        style={{
-                            background: 'none',
-                            border: 'none',
-                            fontSize: '14px',
-                            fontWeight: 600,
-                            color: activeTab === 'search' ? '#000' : '#999',
-                            cursor: 'pointer',
-                            paddingBottom: '5px',
-                            borderBottom: activeTab === 'search' ? '2px solid #000' : '2px solid transparent',
-                            transition: 'all 0.2s ease'
-                        }}
-                    >
-                        Search
-                    </button>
-                    <button 
-                        onClick={() => setActiveTab('upload')}
-                        style={{
-                            background: 'none',
-                            border: 'none',
-                            fontSize: '14px',
-                            fontWeight: 600,
-                            color: activeTab === 'upload' ? '#000' : '#999',
-                            cursor: 'pointer',
-                            paddingBottom: '5px',
-                            borderBottom: activeTab === 'upload' ? '2px solid #000' : '2px solid transparent',
-                            transition: 'all 0.2s ease'
-                        }}
-                    >
-                        Upload
-                    </button>
-                </div>
-
-                {activeTab === 'search' && (
-                    <div style={{ 
-                        display: 'flex', 
-                        alignItems: 'center', 
-                        background: '#f5f5f7', 
-                        borderRadius: '12px',
-                        padding: '8px 16px',
-                    }}>
-                        <span style={{ fontSize: '18px', marginRight: '10px', color: '#888' }}>🔍</span>
-                        <input 
-                            type="text" 
-                            value={query}
-                            onChange={(e) => setQuery(e.target.value)}
-                            onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                            placeholder="Find moments in videos..." 
+                {activeTab === 'search' ? (
+                    <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                        <div style={{ 
+                            flex: 1,
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            background: '#f5f5f7', 
+                            borderRadius: '12px',
+                            padding: '8px 16px',
+                        }}>
+                            <span style={{ fontSize: '18px', marginRight: '10px', color: '#888' }}>🔍</span>
+                            <input 
+                                type="text" 
+                                value={query}
+                                onChange={(e) => setQuery(e.target.value)}
+                                onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                                placeholder="Find moments in videos..." 
+                                style={{
+                                    flex: 1,
+                                    border: 'none',
+                                    background: 'transparent',
+                                    fontSize: '16px',
+                                    outline: 'none',
+                                    color: '#333',
+                                    padding: '8px 0'
+                                }}
+                            />
+                            {query && !isSearching && (
+                                <button
+                                    onClick={handleClear}
+                                    style={{
+                                        background: 'none',
+                                        border: 'none',
+                                        cursor: 'pointer',
+                                        fontSize: '18px',
+                                        color: '#999',
+                                        padding: '0 8px',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        transition: 'color 0.2s ease'
+                                    }}
+                                    onMouseEnter={(e) => e.currentTarget.style.color = '#333'}
+                                    onMouseLeave={(e) => e.currentTarget.style.color = '#999'}
+                                    title="Clear search"
+                                >
+                                    ✕
+                                </button>
+                            )}
+                            {isSearching && <span style={{ fontSize: '12px', color: '#999' }}>Searching...</span>}
+                        </div>
+                        <button
+                            onClick={() => setActiveTab('upload')}
                             style={{
-                                flex: 1,
+                                background: '#000',
+                                color: '#fff',
                                 border: 'none',
-                                background: 'transparent',
-                                fontSize: '16px',
-                                outline: 'none',
-                                color: '#333',
-                                padding: '8px 0'
+                                borderRadius: '12px',
+                                padding: '0 20px',
+                                height: '46px',
+                                fontSize: '14px',
+                                fontWeight: 600,
+                                cursor: 'pointer',
+                                whiteSpace: 'nowrap',
+                                transition: 'opacity 0.2s ease'
                             }}
-                        />
-                        {isSearching && <span style={{ fontSize: '12px', color: '#999' }}>Searching...</span>}
+                            onMouseEnter={(e) => e.currentTarget.style.opacity = '0.8'}
+                            onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
+                        >
+                            + Add Video
+                        </button>
+                    </div>
+                ) : (
+                    <div style={{ display: 'flex', alignItems: 'center', height: '46px' }}>
+                        <button
+                            onClick={() => setActiveTab('search')}
+                            style={{
+                                background: 'none',
+                                border: 'none',
+                                fontSize: '16px',
+                                fontWeight: 600,
+                                color: '#000',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '5px',
+                                padding: 0
+                            }}
+                        >
+                            ← Back to Search
+                        </button>
                     </div>
                 )}
             </div>
@@ -284,7 +349,7 @@ export default function VideoSearch() {
                                                 aspectRatio: '16/9', 
                                                 backgroundColor: '#000', 
                                                 borderRadius: '12px', 
-                                                overflow: 'hidden',
+                                                overflow: 'hidden', 
                                                 marginBottom: '10px',
                                                 position: 'relative'
                                             }}
@@ -400,14 +465,43 @@ export default function VideoSearch() {
                             onChange={handleUpload}
                         />
                     </div>
-                    {uploadStatus && (
-                        <p style={{ 
-                            marginTop: '20px', 
-                            fontSize: '13px',
-                            color: uploadStatus.includes('failed') ? '#e74c3c' : '#2ecc71' 
-                        }}>
-                            {uploadStatus}
-                        </p>
+                    
+                    {/* Progress Bar */}
+                    {(processingFile || uploadStatus) && (
+                        <div style={{ marginTop: '30px', maxWidth: '400px', margin: '30px auto 0' }}>
+                            <div style={{ 
+                                display: 'flex', 
+                                justifyContent: 'space-between', 
+                                marginBottom: '8px',
+                                fontSize: '13px',
+                                fontWeight: 500,
+                                color: '#333'
+                            }}>
+                                <span>{progressStatus || uploadStatus}</span>
+                                {processingFile && <span>{progressStep}%</span>}
+                            </div>
+                            
+                            <div style={{ 
+                                width: '100%', 
+                                height: '6px', 
+                                backgroundColor: '#eee', 
+                                borderRadius: '3px',
+                                overflow: 'hidden'
+                            }}>
+                                <div style={{ 
+                                    width: `${processingFile ? progressStep : uploadStatus.includes('complete') ? 100 : 0}%`, 
+                                    height: '100%', 
+                                    backgroundColor: uploadStatus.includes('failed') ? '#e74c3c' : '#000',
+                                    transition: 'width 0.5s ease'
+                                }} />
+                            </div>
+                            
+                            {processingFile && (
+                                <p style={{ fontSize: '12px', color: '#888', marginTop: '10px' }}>
+                                    Processing: {processingFile}
+                                </p>
+                            )}
+                        </div>
                     )}
                 </div>
             )}
