@@ -61,6 +61,28 @@ export default function VideoSearch() {
             setIsSearching(false);
         }
     };
+
+    const handleDelete = async (filename: string) => {
+        if (!confirm(`Are you sure you want to delete "${filename}"?`)) return;
+
+        try {
+            const response = await fetch(`http://127.0.0.1:8000/delete_video/${filename}`, {
+                method: 'DELETE',
+            });
+
+            if (response.ok) {
+                // Refresh video list
+                fetchVideos();
+                // Clear search results if they contain the deleted video
+                setResults(prev => prev.filter(r => r.video_name !== filename));
+            } else {
+                alert('Failed to delete video');
+            }
+        } catch (error) {
+            console.error('Error deleting video:', error);
+            alert('Error deleting video');
+        }
+    };
     useEffect(() => {
         let intervalId: NodeJS.Timeout;
 

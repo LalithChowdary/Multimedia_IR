@@ -21,8 +21,8 @@ TEMP_AUDIO_DIR = BACKEND_DIR / "video_recognision" / "temp_audio"
 
 # Choose the Whisper model size.
 # Options: "tiny", "base", "small", "medium", "large"
-# "base" is a good balance of speed and accuracy for general use.
-MODEL_NAME = "base"
+# "small" provides better accuracy for Hindi/multilingual transcription
+MODEL_NAME = "small"
 
 
 def format_timestamp(seconds: float) -> str:
@@ -96,7 +96,8 @@ def transcribe_videos():
             # --- Transcription ---
             print("Transcribing audio with Whisper...")
             # The result object contains detailed segments with timestamps.
-            result = model.transcribe(str(temp_audio_path), fp16=False)
+            # Force Hindi language to get Devanagari script (not Urdu)
+            result = model.transcribe(str(temp_audio_path), fp16=False, language="hi")
 
             # --- Save Transcription with Timestamps ---
             print(f"Saving transcript with timestamps to '{transcript_path}'...")

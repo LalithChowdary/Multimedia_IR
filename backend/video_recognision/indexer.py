@@ -24,7 +24,7 @@ from typing import List, Dict, Tuple
 BACKEND_DIR = Path(__file__).resolve().parent.parent
 TRANSCRIPT_DIR = BACKEND_DIR / "video_recognision" / "transcripts"
 INDEX_DIR = BACKEND_DIR / "video_recognision" / "search_index_v2"
-MODEL_NAME = 'all-MiniLM-L6-v2'
+MODEL_NAME = 'paraphrase-multilingual-MiniLM-L12-v2'
 
 # Chunking parameters
 CHUNK_SIZE = 5  # Number of consecutive sentences to combine

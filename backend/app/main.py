@@ -14,6 +14,15 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'music_recognit
 # Add video_recognision to path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'video_recognision'))
 
+# Define directories
+BACKEND_DIR = Path(__file__).resolve().parent.parent
+VIDEO_DIR = BACKEND_DIR / "videos"
+TRANSCRIPT_DIR = BACKEND_DIR / "video_recognision" / "transcripts"
+
+# Ensure directories exist
+VIDEO_DIR.mkdir(exist_ok=True)
+TRANSCRIPT_DIR.mkdir(exist_ok=True)
+
 from fingerprint import generate_fingerprints
 from database import FingerprintDB
 from streaming import websocket_endpoint
@@ -176,6 +185,33 @@ def get_status(filename: str):
     """
     status = processing_status.get(filename, "Unknown")
     return {"status": status}
+
+@app.delete("/delete_video/{filename}")
+def delete_video(filename: str):
+    """
+    Deletes a video file and its corresponding transcript.
+    """
+    video_path = VIDEO_DIR / filename
+    transcript_path = TRANSCRIPT_DIR / f"{Path(filename).stem}.txt"
+    
+    deleted_files = []
+    
+    try:
+        if video_path.exists():
+            os.remove(video_path)
+            deleted_files.append("video")
+            
+        if transcript_path.exists():
+            os.remove(transcript_path)
+            deleted_files.append("transcript")
+            
+        if not deleted_files:
+            raise HTTPException(status_code=404, detail="Video or transcript not found")
+            
+        return {"message": f"Successfully deleted {', '.join(deleted_files)} for {filename}"}
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error deleting files: {str(e)}")
 
 @app.post("/upload_video")
 async def upload_video(background_tasks: BackgroundTasks, video_file: UploadFile = File(...)):

@@ -1,8 +1,8 @@
 {
-  "total_videos": 20,
-  "total_chunks": 1236,
+  "total_videos": 12,
+  "total_chunks": 693,
   "embedding_dimension": 384,
-  "model_name": "all-MiniLM-L6-v2",
+  "model_name": "paraphrase-multilingual-MiniLM-L12-v2",
   "chunk_size": 5,
   "overlap": 2
 }

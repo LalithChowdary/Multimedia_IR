@@ -21,7 +21,8 @@ import faiss
 # --- Configuration ---
 BACKEND_DIR = Path(__file__).resolve().parent.parent
 INDEX_DIR = BACKEND_DIR / "video_recognision" / "search_index_v2"
-MODEL_NAME = 'all-MiniLM-L6-v2'
+VIDEO_DIR = BACKEND_DIR / "videos"
+MODEL_NAME = 'paraphrase-multilingual-MiniLM-L12-v2'
 
 # Cache the model globally to avoid reloading
 _MODEL_CACHE = None
