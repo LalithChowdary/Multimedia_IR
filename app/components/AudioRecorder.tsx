@@ -16,6 +16,8 @@ export default function AudioRecorder() {
     const [status, setStatus] = useState('');
     const [match, setMatch] = useState<MatchResult | null>(null);
     const [isListening, setIsListening] = useState(false);
+    const [isUploading, setIsUploading] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     const socketRef = useRef<WebSocket | null>(null);
     const audioContextRef = useRef<AudioContext | null>(null);
@@ -194,6 +196,53 @@ export default function AudioRecorder() {
         setStatus('');
     };
 
+    const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+
+        // Validate file type
+        const validTypes = ['audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/ogg', 'audio/m4a', 'audio/x-m4a'];
+        if (!validTypes.includes(file.type) && !file.name.match(/\.(mp3|wav|ogg|m4a)$/i)) {
+            setStatus('Invalid file type. Please upload an audio file.');
+            setTimeout(() => setStatus(''), 3000);
+            return;
+        }
+
+        setIsUploading(true);
+        setMatch(null);
+        setStatus('Analyzing audio clip...');
+
+        try {
+            const formData = new FormData();
+            formData.append('audio_file', file);
+
+            const response = await fetch('http://127.0.0.1:8000/identify', {
+                method: 'POST',
+                body: formData,
+            });
+
+            const result: MatchResult = await response.json();
+
+            if (result.match) {
+                setMatch(result);
+                setStatus('Match Found!');
+            } else {
+                setStatus('No match found');
+                setTimeout(() => setStatus(''), 3000);
+            }
+        } catch (error) {
+            console.error('Upload error:', error);
+            setStatus('Error analyzing file');
+            setTimeout(() => setStatus(''), 3000);
+        } finally {
+            setIsUploading(false);
+            // Reset file input
+            if (fileInputRef.current) {
+                fileInputRef.current.value = '';
+            }
+        }
+    };
+
     const handleToggle = () => isRecording ? stopRecording() : startRecording();
 
     return (
@@ -331,6 +380,71 @@ export default function AudioRecorder() {
                         </p>
                     </div>
                 )}
+            </div>
+
+            {/* Upload Button */}
+            <div style={{ 
+                marginTop: '30px',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: '10px'
+            }}>
+                <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="audio/*,.mp3,.wav,.ogg,.m4a"
+                    onChange={handleFileUpload}
+                    style={{ display: 'none' }}
+                />
+                <button
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isRecording || isUploading}
+                    style={{
+                        padding: '12px 28px',
+                        borderRadius: '25px',
+                        border: '1.5px solid #e0e0e0',
+                        background: isUploading ? '#f5f5f5' : '#fff',
+                        color: isUploading ? '#999' : '#333',
+                        fontSize: '13px',
+                        fontWeight: 600,
+                        cursor: isRecording || isUploading ? 'not-allowed' : 'pointer',
+                        transition: 'all 0.2s ease',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        opacity: isRecording ? 0.5 : 1,
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
+                        outline: 'none'
+                    }}
+                    onMouseEnter={(e) => {
+                        if (!isRecording && !isUploading) {
+                            e.currentTarget.style.borderColor = '#000';
+                            e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.08)';
+                        }
+                    }}
+                    onMouseLeave={(e) => {
+                        if (!isRecording && !isUploading) {
+                            e.currentTarget.style.borderColor = '#e0e0e0';
+                            e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.04)';
+                        }
+                    }}
+                >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="17 8 12 3 7 8"></polyline>
+                        <line x1="12" y1="3" x2="12" y2="15"></line>
+                    </svg>
+                    {isUploading ? 'Analyzing...' : 'Upload Audio Clip'}
+                </button>
+                <p style={{
+                    margin: 0,
+                    fontSize: '11px',
+                    color: '#aaa',
+                    textAlign: 'center'
+                }}>
+                    Upload a 5-10 second audio clip
+                </p>
             </div>
         </div>
     );

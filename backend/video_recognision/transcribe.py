@@ -1,6 +1,6 @@
 import os
 import whisper
-from moviepy import VideoFileClip
+from moviepy.editor import VideoFileClip
 from pathlib import Path
 from tqdm import tqdm
 
