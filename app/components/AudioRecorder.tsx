@@ -18,7 +18,6 @@ export default function AudioRecorder() {
     const [isListening, setIsListening] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
     const [showPlayer, setShowPlayer] = useState(false);
-    const [showSuccessAnimation, setShowSuccessAnimation] = useState(false);
     const [isPlaying, setIsPlaying] = useState(false);
     const [currentTime, setCurrentTime] = useState(0);
     const [duration, setDuration] = useState(0);
@@ -89,14 +88,9 @@ export default function AudioRecorder() {
                     setMatch(result);
                     if (result.confirmed) {
                         setStatus('Match Confirmed');
-                        // Trigger success animation
-                        setShowSuccessAnimation(true);
-                        // Auto-stop recording and show player after animation
-                        setTimeout(() => {
-                            stopRecording();
-                            setShowSuccessAnimation(false);
-                            setShowPlayer(true);
-                        }, 1000); // 1.0s for animation
+                        // Stop recording and show player with seamless expansion
+                        stopRecording();
+                        setShowPlayer(true);
                     } else {
                         setStatus('Analyzing...');
                     }
@@ -244,13 +238,8 @@ export default function AudioRecorder() {
             if (result.match) {
                 setMatch(result);
                 setStatus('Match Found!');
-                // Trigger success animation
-                setShowSuccessAnimation(true);
-                // Show player after animation
-                setTimeout(() => {
-                    setShowSuccessAnimation(false);
-                    setShowPlayer(true);
-                }, 1000); // 1.0s for animation
+                // Show player with seamless expansion animation
+                setShowPlayer(true);
             } else {
                 setStatus('No match found');
                 setTimeout(() => setStatus(''), 3000);
@@ -516,24 +505,7 @@ export default function AudioRecorder() {
                 </p>
             </div>
 
-            {/* Success Animation Overlay - Seamless Reveal */}
-            {showSuccessAnimation && match && (
-                <div style={{
-                    position: 'fixed',
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    zIndex: 9999,
-                    pointerEvents: 'none',
-                    backgroundImage: `url(http://127.0.0.1:8000/content/audio_thumbnails/${encodeURIComponent(getSongFileName(match.song_id || ''))}.png)`,
-                    backgroundSize: 'cover',
-                    backgroundPosition: 'center',
-                    animation: 'revealAndBlur 1s cubic-bezier(0.25, 1, 0.5, 1) forwards'
-                }} />
-            )}
-
-            {/* Music Player Overlay */}
+            {/* CSS Animations */}
             {showPlayer && match && (
                 <div style={{
                     position: 'fixed',
@@ -542,9 +514,8 @@ export default function AudioRecorder() {
                     right: 0,
                     bottom: 0,
                     zIndex: 10000,
-                    animation: 'fadeIn 0.5s ease'
                 }}>
-                    {/* Blurred Background */}
+                    {/* Expanding Background - This IS the dot that expands */}
                     <div style={{
                         position: 'absolute',
                         top: 0,
@@ -555,17 +526,21 @@ export default function AudioRecorder() {
                         backgroundSize: 'cover',
                         backgroundPosition: 'center',
                         filter: 'blur(60px) brightness(0.7)',
-                        transform: 'scale(1.2)'
+                        transform: 'scale(1.2)',
+                        clipPath: 'circle(0% at 50% 50%)',
+                        animation: 'expandFromCenter 2.1s cubic-bezier(0.16, 1, 0.3, 1) forwards'
                     }} />
 
-                    {/* Gradient Overlay */}
+                    {/* Gradient Overlay - Also expands with the background */}
                     <div style={{
                         position: 'absolute',
                         top: 0,
                         left: 0,
                         right: 0,
                         bottom: 0,
-                        background: 'linear-gradient(180deg, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.8) 100%)'
+                        background: 'linear-gradient(180deg, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.8) 100%)',
+                        clipPath: 'circle(0% at 50% 50%)',
+                        animation: 'expandFromCenter 2.1s cubic-bezier(0.16, 1, 0.3, 1) forwards'
                     }} />
 
                     {/* Close Button */}
@@ -601,7 +576,7 @@ export default function AudioRecorder() {
                         ×
                     </button>
 
-                    {/* Player Content */}
+                    {/* Player Content - Fades in as background expands */}
                     <div style={{
                         position: 'relative',
                         display: 'flex',
@@ -610,7 +585,9 @@ export default function AudioRecorder() {
                         justifyContent: 'center',
                         height: '100%',
                         padding: '40px',
-                        zIndex: 1
+                        zIndex: 1,
+                        opacity: 0,
+                        animation: 'fadeInContent 0.6s ease 0.4s forwards'
                     }}>
                         {/* Album Art */}
                         <div style={{
@@ -734,19 +711,22 @@ export default function AudioRecorder() {
                         opacity: 1;
                     }
                 }
-                @keyframes revealAndBlur {
+                @keyframes expandFromCenter {
                     0% {
-                        clip-path: circle(0px at center);
-                        filter: blur(0px) brightness(1);
-                        transform: scale(1);
-                    }
-                    10% {
-                        clip-path: circle(20px at center);
+                        clip-path: circle(0% at 50% 50%);
                     }
                     100% {
-                        clip-path: circle(150vmax at center);
-                        filter: blur(60px) brightness(0.7);
-                        transform: scale(1.2);
+                        clip-path: circle(150% at 50% 50%);
+                    }
+                }
+                @keyframes fadeInContent {
+                    from { 
+                        opacity: 0;
+                        transform: scale(0.95);
+                    }
+                    to { 
+                        opacity: 1;
+                        transform: scale(1);
                     }
                 }
                 input[type="range"]::-webkit-slider-thumb {
