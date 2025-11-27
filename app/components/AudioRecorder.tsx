@@ -96,7 +96,7 @@ export default function AudioRecorder() {
                             stopRecording();
                             setShowSuccessAnimation(false);
                             setShowPlayer(true);
-                        }, 1500); // 1.5s for animation
+                        }, 1000); // 1.0s for animation
                     } else {
                         setStatus('Analyzing...');
                     }
@@ -244,6 +244,13 @@ export default function AudioRecorder() {
             if (result.match) {
                 setMatch(result);
                 setStatus('Match Found!');
+                // Trigger success animation
+                setShowSuccessAnimation(true);
+                // Show player after animation
+                setTimeout(() => {
+                    setShowSuccessAnimation(false);
+                    setShowPlayer(true);
+                }, 1000); // 1.0s for animation
             } else {
                 setStatus('No match found');
                 setTimeout(() => setStatus(''), 3000);
@@ -509,7 +516,7 @@ export default function AudioRecorder() {
                 </p>
             </div>
 
-            {/* Success Animation Overlay */}
+            {/* Success Animation Overlay - Seamless Reveal */}
             {showSuccessAnimation && match && (
                 <div style={{
                     position: 'fixed',
@@ -517,34 +524,13 @@ export default function AudioRecorder() {
                     left: 0,
                     right: 0,
                     bottom: 0,
-                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
                     zIndex: 9999,
-                    animation: 'fadeIn 0.3s ease'
-                }}>
-                    <div style={{
-                        textAlign: 'center',
-                        animation: 'scaleIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)'
-                    }}>
-                        <div style={{
-                            fontSize: '80px',
-                            marginBottom: '20px',
-                            animation: 'pulse 0.6s ease infinite'
-                        }}>
-                            ✓
-                        </div>
-                        <h2 style={{
-                            color: '#fff',
-                            fontSize: '32px',
-                            fontWeight: 700,
-                            margin: 0
-                        }}>
-                            {match.song_id}
-                        </h2>
-                    </div>
-                </div>
+                    pointerEvents: 'none',
+                    backgroundImage: `url(http://127.0.0.1:8000/content/audio_thumbnails/${encodeURIComponent(getSongFileName(match.song_id || ''))}.png)`,
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
+                    animation: 'revealAndBlur 1s cubic-bezier(0.25, 1, 0.5, 1) forwards'
+                }} />
             )}
 
             {/* Music Player Overlay */}
@@ -748,9 +734,20 @@ export default function AudioRecorder() {
                         opacity: 1;
                     }
                 }
-                @keyframes pulse {
-                    0%, 100% { transform: scale(1); }
-                    50% { transform: scale(1.1); }
+                @keyframes revealAndBlur {
+                    0% {
+                        clip-path: circle(0px at center);
+                        filter: blur(0px) brightness(1);
+                        transform: scale(1);
+                    }
+                    10% {
+                        clip-path: circle(20px at center);
+                    }
+                    100% {
+                        clip-path: circle(150vmax at center);
+                        filter: blur(60px) brightness(0.7);
+                        transform: scale(1.2);
+                    }
                 }
                 input[type="range"]::-webkit-slider-thumb {
                     appearance: none;
