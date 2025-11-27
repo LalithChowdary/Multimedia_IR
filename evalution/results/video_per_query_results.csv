@@ -1,0 +1,22 @@
+Query,Expected Video,Semantic Rank,TF-IDF Rank,Language Pair
+iPhone 17 Pro Max Review,iPhone 17 Pro Max Review,1,2,EN→EN
+Dope Tech,Dope Tech,1,1,EN→EN
+AirPods Pro 3,AirPods Pro 3 Review,1,1,EN→EN
+Gaming Laptop,The Gaming Laptop for Pros,1,1,EN→EN
+Apple Bored Winning,Is Apple Bored of Winning,1,1,EN→EN
+iPhone battery life camera,iPhone 17 Pro Max Review,1,1,EN→EN
+radix sort algorithm,7.10 Radix Sort,1,1,EN→EN
+urban planning Indian cities,I investigated why Indian cities suck,1,1,EN→EN
+iPhone video recording quality,iPhone Video Is Still Better,1,Not Found,EN→EN
+Mac weird usage,The WEiRDEST Way to Use a Mac,1,1,EN→EN
+smartphone display refresh rate,iPhone 17 Pro Max Review,1,4,EN→EN
+metropolis infrastructure development,I investigated why Indian cities,1,2,EN→EN
+portable computer for gaming,The Gaming Laptop for Pros,1,4,EN→EN
+आईफोन की कीमत,iQOO 15 Price,Not Found,Not Found,HI→HI
+मोबाइल फोन स्पेसिफिकेशन,iQOO 15 Price,2,1,HI→HI
+स्मार्टफोन फीचर्स,iQOO 15 Price,Not Found,1,HI→HI
+फोन रिव्यू,iQOO 15 Price,1,Not Found,HI→HI
+बिगेस्ट अपग्रेड स्कैम,Biggest Upgrade Scam,1,1,HI→HI
+iQOO phone price,iQOO 15 Price,4,1,EN→HI
+Phoebus cartel planned obsolescence,Biggest Upgrade Scam,1,3,EN→HI
+smartphone upgrade scam,Biggest Upgrade Scam,7,1,EN→HI
