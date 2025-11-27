@@ -42,10 +42,15 @@ def format_timestamp(seconds: float) -> str:
     return f"{hours:02d}:{minutes:02d}:{seconds:02d}.{milliseconds:03d}"
 
 
-def transcribe_videos():
+def transcribe_videos(target_file: Path = None, language: str = None):
     """
     Extracts audio from videos, transcribes it using the local Whisper model,
     and saves the transcriptions with timestamps.
+    
+    Args:
+        target_file: Optional path to a specific video file to process.
+        language: Optional language code ('hi', 'en', 'mix'). 
+                  If 'hi', forces Hindi. Otherwise auto-detects.
     """
     print(f"Loading Whisper model: '{MODEL_NAME}'...")
     # This loads the specified Whisper model. The first time a model is used,
@@ -62,10 +67,13 @@ def transcribe_videos():
 
     # --- Video Processing ---
     # Get a list of all video files in the directory.
-    video_files = [
-        f for f in os.listdir(VIDEO_DIR)
-        if f.lower().endswith(('.mp4', '.mkv', '.mov', '.avi', '.webm'))
-    ]
+    if target_file:
+        video_files = [target_file.name]
+    else:
+        video_files = [
+            f for f in os.listdir(VIDEO_DIR)
+            if f.lower().endswith(('.mp4', '.mkv', '.mov', '.avi', '.webm'))
+        ]
 
     if not video_files:
         print(f"No video files found in {VIDEO_DIR}. Please add videos to transcribe.")
@@ -81,7 +89,8 @@ def transcribe_videos():
         temp_audio_path = TEMP_AUDIO_DIR / f"{video_name}.mp3"
 
         # --- Skip if Already Processed ---
-        if transcript_path.exists():
+        if transcript_path.exists() and not target_file:
+             # Only skip if we are scanning directory. If specific file requested, overwrite/re-process.
             print(f"Skipping '{video_filename}', transcript already exists.")
             continue
 
@@ -96,8 +105,17 @@ def transcribe_videos():
             # --- Transcription ---
             print("Transcribing audio with Whisper...")
             # The result object contains detailed segments with timestamps.
-            # Force Hindi language to get Devanagari script (not Urdu)
-            result = model.transcribe(str(temp_audio_path), fp16=False, language="hi")
+            
+            # Determine language setting
+            transcribe_options = {"fp16": False}
+            if language == "hi":
+                print("Forcing language: Hindi")
+                transcribe_options["language"] = "hi"
+            else:
+                print("Language: Auto-detect (English/Mixed)")
+                # Do not set language, let Whisper detect
+            
+            result = model.transcribe(str(temp_audio_path), **transcribe_options)
 
             # --- Save Transcription with Timestamps ---
             print(f"Saving transcript with timestamps to '{transcript_path}'...")

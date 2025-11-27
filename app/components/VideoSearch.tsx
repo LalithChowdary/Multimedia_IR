@@ -30,6 +30,7 @@ export default function VideoSearch() {
     
     const [uploadStatus, setUploadStatus] = useState('');
     const [playingVideo, setPlayingVideo] = useState<string | null>(null);
+    const [selectedLanguage, setSelectedLanguage] = useState<'hi' | 'en' | 'mix'>('hi');
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     // Fetch videos on load
@@ -83,6 +84,7 @@ export default function VideoSearch() {
             alert('Error deleting video');
         }
     };
+
     useEffect(() => {
         let intervalId: NodeJS.Timeout;
 
@@ -124,13 +126,13 @@ export default function VideoSearch() {
         setResults([]);
     };
 
-    const handleUpload = async (e: React.FormEvent) => {
-        e.preventDefault();
+    const handleUpload = async () => {
         if (!fileInputRef.current?.files?.[0]) return;
 
         const file = fileInputRef.current.files[0];
         const formData = new FormData();
         formData.append('video_file', file);
+        formData.append('language', selectedLanguage);
 
         setUploadStatus('Uploading...');
         setProgressStep(0);
@@ -462,31 +464,144 @@ export default function VideoSearch() {
                     animation: 'fadeIn 0.4s ease',
                     marginTop: '20px'
                 }}>
-                    <div 
-                        onClick={() => fileInputRef.current?.click()}
-                        style={{ 
-                            border: '1px dashed #ccc', 
-                            borderRadius: '12px', 
-                            padding: '60px 20px',
-                            cursor: 'pointer',
-                            backgroundColor: '#fafafa',
-                            transition: 'background 0.2s ease'
-                        }}
-                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f0f0f0'}
-                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#fafafa'}
-                    >
-                        <p style={{ fontSize: '24px', marginBottom: '10px' }}>📄</p>
-                        <p style={{ margin: 0, fontSize: '15px', color: '#666' }}>
-                            Click to select a video file
-                        </p>
-                        <input 
-                            type="file" 
-                            ref={fileInputRef}
-                            accept="video/*"
-                            style={{ display: 'none' }}
-                            onChange={handleUpload}
-                        />
-                    </div>
+                    {!fileInputRef.current?.files?.[0] && !processingFile && !uploadStatus ? (
+                        <div 
+                            onClick={() => fileInputRef.current?.click()}
+                            style={{ 
+                                border: '1px dashed #ccc', 
+                                borderRadius: '12px', 
+                                padding: '60px 20px',
+                                cursor: 'pointer',
+                                backgroundColor: '#fafafa',
+                                transition: 'background 0.2s ease'
+                            }}
+                            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f0f0f0'}
+                            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#fafafa'}
+                        >
+                            <p style={{ fontSize: '24px', marginBottom: '10px' }}>📄</p>
+                            <p style={{ margin: 0, fontSize: '15px', color: '#666' }}>
+                                Click to select a video file
+                            </p>
+                            <input 
+                                type="file" 
+                                ref={fileInputRef}
+                                accept="video/*"
+                                style={{ display: 'none' }}
+                                onChange={(e) => {
+                                    if (e.target.files?.[0]) {
+                                        // Force re-render to show language selection
+                                        setUploadStatus(''); 
+                                    }
+                                }}
+                            />
+                        </div>
+                    ) : (
+                        // Language Selection & Upload Confirmation
+                        !processingFile && !uploadStatus.includes('Processing') ? (
+                            <div style={{
+                                background: '#fff',
+                                padding: '30px',
+                                borderRadius: '12px',
+                                border: '1px solid #eee',
+                                boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
+                            }}>
+                                <h3 style={{ fontSize: '18px', marginBottom: '20px' }}>Upload Settings</h3>
+                                
+                                <div style={{ marginBottom: '20px', textAlign: 'left' }}>
+                                    <label style={{ display: 'block', fontSize: '14px', fontWeight: 600, marginBottom: '8px', color: '#444' }}>
+                                        Selected File
+                                    </label>
+                                    <div style={{ 
+                                        padding: '10px', 
+                                        background: '#f5f5f7', 
+                                        borderRadius: '8px',
+                                        fontSize: '14px',
+                                        color: '#333',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '10px'
+                                    }}>
+                                        <span>📄</span>
+                                        {fileInputRef.current?.files?.[0]?.name}
+                                        <button 
+                                            onClick={() => {
+                                                if (fileInputRef.current) fileInputRef.current.value = '';
+                                                setUploadStatus(''); // Reset to file selection
+                                            }}
+                                            style={{
+                                                marginLeft: 'auto',
+                                                border: 'none',
+                                                background: 'none',
+                                                color: '#e74c3c',
+                                                cursor: 'pointer',
+                                                fontSize: '12px'
+                                            }}
+                                        >
+                                            Change
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div style={{ marginBottom: '30px', textAlign: 'left' }}>
+                                    <label style={{ display: 'block', fontSize: '14px', fontWeight: 600, marginBottom: '12px', color: '#444' }}>
+                                        Video Language
+                                    </label>
+                                    <div style={{ display: 'flex', gap: '15px', flexDirection: 'column' }}>
+                                        {[
+                                            { id: 'hi', label: 'Hindi (Forces Hindi Model)', desc: 'Best for pure Hindi videos' },
+                                            { id: 'en', label: 'English', desc: 'Best for English videos' },
+                                            { id: 'mix', label: 'Hindi + English', desc: 'Auto-detects mixed language' }
+                                        ].map((option) => (
+                                            <label 
+                                                key={option.id}
+                                                style={{ 
+                                                    display: 'flex', 
+                                                    alignItems: 'center', 
+                                                    gap: '12px',
+                                                    padding: '12px',
+                                                    border: selectedLanguage === option.id ? '2px solid #000' : '1px solid #ddd',
+                                                    borderRadius: '8px',
+                                                    cursor: 'pointer',
+                                                    transition: 'all 0.2s ease'
+                                                }}
+                                            >
+                                                <input 
+                                                    type="radio" 
+                                                    name="language" 
+                                                    value={option.id}
+                                                    checked={selectedLanguage === option.id}
+                                                    onChange={(e) => setSelectedLanguage(e.target.value as any)}
+                                                    style={{ accentColor: '#000' }}
+                                                />
+                                                <div>
+                                                    <div style={{ fontWeight: 600, fontSize: '14px' }}>{option.label}</div>
+                                                    <div style={{ fontSize: '12px', color: '#777' }}>{option.desc}</div>
+                                                </div>
+                                            </label>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <button
+                                    onClick={handleUpload}
+                                    style={{
+                                        width: '100%',
+                                        padding: '14px',
+                                        background: '#000',
+                                        color: '#fff',
+                                        border: 'none',
+                                        borderRadius: '10px',
+                                        fontSize: '16px',
+                                        fontWeight: 600,
+                                        cursor: 'pointer',
+                                        boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
+                                    }}
+                                >
+                                    Upload Video
+                                </button>
+                            </div>
+                        ) : null
+                    )}
                     
                     {/* Progress Bar */}
                     {(processingFile || uploadStatus) && (
@@ -522,6 +637,28 @@ export default function VideoSearch() {
                                 <p style={{ fontSize: '12px', color: '#888', marginTop: '10px' }}>
                                     Processing: {processingFile}
                                 </p>
+                            )}
+                            
+                            {uploadStatus.includes('complete') && (
+                                <button 
+                                    onClick={() => {
+                                        setUploadStatus('');
+                                        setProcessingFile(null);
+                                        if (fileInputRef.current) fileInputRef.current.value = '';
+                                    }}
+                                    style={{
+                                        marginTop: '20px',
+                                        background: 'none',
+                                        border: '1px solid #ddd',
+                                        padding: '8px 16px',
+                                        borderRadius: '20px',
+                                        cursor: 'pointer',
+                                        fontSize: '13px',
+                                        color: '#555'
+                                    }}
+                                >
+                                    Upload Another
+                                </button>
                             )}
                         </div>
                     )}

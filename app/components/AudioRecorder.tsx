@@ -17,7 +17,14 @@ export default function AudioRecorder() {
     const [match, setMatch] = useState<MatchResult | null>(null);
     const [isListening, setIsListening] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
+    const [showPlayer, setShowPlayer] = useState(false);
+    const [showSuccessAnimation, setShowSuccessAnimation] = useState(false);
+    const [isPlaying, setIsPlaying] = useState(false);
+    const [currentTime, setCurrentTime] = useState(0);
+    const [duration, setDuration] = useState(0);
+    
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const audioRef = useRef<HTMLAudioElement>(null);
 
     const socketRef = useRef<WebSocket | null>(null);
     const audioContextRef = useRef<AudioContext | null>(null);
@@ -80,8 +87,19 @@ export default function AudioRecorder() {
                 const result: MatchResult = JSON.parse(event.data);
                 if (result.match) {
                     setMatch(result);
-                    if (result.confirmed) setStatus('Match Confirmed');
-                    else setStatus('Analyzing...');
+                    if (result.confirmed) {
+                        setStatus('Match Confirmed');
+                        // Trigger success animation
+                        setShowSuccessAnimation(true);
+                        // Auto-stop recording and show player after animation
+                        setTimeout(() => {
+                            stopRecording();
+                            setShowSuccessAnimation(false);
+                            setShowPlayer(true);
+                        }, 1500); // 1.5s for animation
+                    } else {
+                        setStatus('Analyzing...');
+                    }
                 } else {
                     setStatus('Listening...');
                 }
@@ -241,6 +259,50 @@ export default function AudioRecorder() {
                 fileInputRef.current.value = '';
             }
         }
+    };
+
+    // Audio Player Controls
+    const togglePlayPause = () => {
+        if (audioRef.current) {
+            if (isPlaying) {
+                audioRef.current.pause();
+            } else {
+                audioRef.current.play();
+            }
+            setIsPlaying(!isPlaying);
+        }
+    };
+
+    const handleTimeUpdate = () => {
+        if (audioRef.current) {
+            setCurrentTime(audioRef.current.currentTime);
+        }
+    };
+
+    const handleLoadedMetadata = () => {
+        if (audioRef.current) {
+            setDuration(audioRef.current.duration);
+        }
+    };
+
+    const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const newTime = parseFloat(e.target.value);
+        if (audioRef.current) {
+            audioRef.current.currentTime = newTime;
+            setCurrentTime(newTime);
+        }
+    };
+
+    const formatTime = (seconds: number) => {
+        const mins = Math.floor(seconds / 60);
+        const secs = Math.floor(seconds % 60);
+        return `${mins}:${secs.toString().padStart(2, '0')}`;
+    };
+
+    const getSongFileName = (songName: string) => {
+        // Map song names to their file names
+        // Handle cases like "Night Change" -> "Night Change.mp3"
+        return songName;
     };
 
     const handleToggle = () => isRecording ? stopRecording() : startRecording();
@@ -446,6 +508,269 @@ export default function AudioRecorder() {
                     Upload a 5-10 second audio clip
                 </p>
             </div>
+
+            {/* Success Animation Overlay */}
+            {showSuccessAnimation && match && (
+                <div style={{
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    zIndex: 9999,
+                    animation: 'fadeIn 0.3s ease'
+                }}>
+                    <div style={{
+                        textAlign: 'center',
+                        animation: 'scaleIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)'
+                    }}>
+                        <div style={{
+                            fontSize: '80px',
+                            marginBottom: '20px',
+                            animation: 'pulse 0.6s ease infinite'
+                        }}>
+                            ✓
+                        </div>
+                        <h2 style={{
+                            color: '#fff',
+                            fontSize: '32px',
+                            fontWeight: 700,
+                            margin: 0
+                        }}>
+                            {match.song_id}
+                        </h2>
+                    </div>
+                </div>
+            )}
+
+            {/* Music Player Overlay */}
+            {showPlayer && match && (
+                <div style={{
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    zIndex: 10000,
+                    animation: 'fadeIn 0.5s ease'
+                }}>
+                    {/* Blurred Background */}
+                    <div style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        backgroundImage: `url(http://127.0.0.1:8000/content/audio_thumbnails/${encodeURIComponent(getSongFileName(match.song_id || ''))}.png)`,
+                        backgroundSize: 'cover',
+                        backgroundPosition: 'center',
+                        filter: 'blur(60px) brightness(0.7)',
+                        transform: 'scale(1.2)'
+                    }} />
+
+                    {/* Gradient Overlay */}
+                    <div style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        background: 'linear-gradient(180deg, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.8) 100%)'
+                    }} />
+
+                    {/* Close Button */}
+                    <button
+                        onClick={() => {
+                            setShowPlayer(false);
+                            if (audioRef.current) {
+                                audioRef.current.pause();
+                                setIsPlaying(false);
+                            }
+                        }}
+                        style={{
+                            position: 'absolute',
+                            top: '30px',
+                            right: '30px',
+                            background: 'rgba(255,255,255,0.1)',
+                            border: 'none',
+                            borderRadius: '50%',
+                            width: '40px',
+                            height: '40px',
+                            color: '#fff',
+                            fontSize: '24px',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            zIndex: 10,
+                            transition: 'background 0.2s ease'
+                        }}
+                        onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.2)'}
+                        onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
+                    >
+                        ×
+                    </button>
+
+                    {/* Player Content */}
+                    <div style={{
+                        position: 'relative',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        height: '100%',
+                        padding: '40px',
+                        zIndex: 1
+                    }}>
+                        {/* Album Art */}
+                        <div style={{
+                            marginBottom: '40px',
+                            animation: 'scaleIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1)'
+                        }}>
+                            <img
+                                src={`http://127.0.0.1:8000/content/audio_thumbnails/${encodeURIComponent(getSongFileName(match.song_id || ''))}.png`}
+                                alt={match.song_id}
+                                style={{
+                                    width: '400px',
+                                    height: '400px',
+                                    borderRadius: '12px',
+                                    boxShadow: '0 20px 60px rgba(0,0,0,0.5)',
+                                    objectFit: 'cover'
+                                }}
+                            />
+                        </div>
+
+                        {/* Song Name */}
+                        <h2 style={{
+                            color: '#fff',
+                            fontSize: '36px',
+                            fontWeight: 700,
+                            margin: '0 0 40px 0',
+                            textAlign: 'center',
+                            letterSpacing: '-0.5px'
+                        }}>
+                            {match.song_id}
+                        </h2>
+
+                        {/* Progress Bar */}
+                        <div style={{
+                            width: '100%',
+                            maxWidth: '600px',
+                            marginBottom: '20px'
+                        }}>
+                            <input
+                                type="range"
+                                min="0"
+                                max={duration || 0}
+                                value={currentTime}
+                                onChange={handleSeek}
+                                style={{
+                                    width: '100%',
+                                    height: '6px',
+                                    borderRadius: '3px',
+                                    outline: 'none',
+                                    appearance: 'none',
+                                    background: `linear-gradient(to right, #fff ${(currentTime / duration) * 100}%, rgba(255,255,255,0.3) ${(currentTime / duration) * 100}%)`,
+                                    cursor: 'pointer'
+                                }}
+                            />
+                            <div style={{
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                marginTop: '8px',
+                                color: 'rgba(255,255,255,0.7)',
+                                fontSize: '13px'
+                            }}>
+                                <span>{formatTime(currentTime)}</span>
+                                <span>-{formatTime(duration - currentTime)}</span>
+                            </div>
+                        </div>
+
+                        {/* Playback Controls */}
+                        <div style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '30px'
+                        }}>
+                            <button
+                                onClick={togglePlayPause}
+                                style={{
+                                    width: '70px',
+                                    height: '70px',
+                                    borderRadius: '50%',
+                                    border: 'none',
+                                    background: '#fff',
+                                    color: '#000',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    fontSize: '24px',
+                                    boxShadow: '0 8px 20px rgba(0,0,0,0.3)',
+                                    transition: 'transform 0.2s ease'
+                                }}
+                                onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.1)'}
+                                onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                            >
+                                {isPlaying ? '❚❚' : '▶'}
+                            </button>
+                        </div>
+
+                        {/* Hidden Audio Element */}
+                        <audio
+                            ref={audioRef}
+                            src={`http://127.0.0.1:8000/content/audio/${encodeURIComponent(getSongFileName(match.song_id || ''))}.mp3`}
+                            onTimeUpdate={handleTimeUpdate}
+                            onLoadedMetadata={handleLoadedMetadata}
+                            onEnded={() => setIsPlaying(false)}
+                        />
+                    </div>
+                </div>
+            )}
+
+            {/* CSS Animations */}
+            <style jsx>{`
+                @keyframes fadeIn {
+                    from { opacity: 0; }
+                    to { opacity: 1; }
+                }
+                @keyframes scaleIn {
+                    from { 
+                        transform: scale(0.8);
+                        opacity: 0;
+                    }
+                    to { 
+                        transform: scale(1);
+                        opacity: 1;
+                    }
+                }
+                @keyframes pulse {
+                    0%, 100% { transform: scale(1); }
+                    50% { transform: scale(1.1); }
+                }
+                input[type="range"]::-webkit-slider-thumb {
+                    appearance: none;
+                    width: 16px;
+                    height: 16px;
+                    border-radius: 50%;
+                    background: #fff;
+                    cursor: pointer;
+                    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+                }
+                input[type="range"]::-moz-range-thumb {
+                    width: 16px;
+                    height: 16px;
+                    border-radius: 50%;
+                    background: #fff;
+                    cursor: pointer;
+                    border: none;
+                    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+                }
+            `}</style>
         </div>
     );
 }

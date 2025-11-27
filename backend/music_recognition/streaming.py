@@ -1,5 +1,7 @@
 import asyncio
 import numpy as np
+import os
+import re
 from fastapi import WebSocket, WebSocketDisconnect
 
 from database import FingerprintDB
@@ -7,6 +9,37 @@ from fingerprint import (
     _generate_fingerprints_from_array,
     SAMPLE_RATE
 )
+
+
+def extract_song_name(file_path):
+    """
+    Extract a clean song name from a file path.
+    
+    Examples:
+        "backend/audio_files/The Weeknd ft. Daft Punk - Starboy (mp3.pm)" -> "Starboy"
+        "Night Change.mp3" -> "Night Change"
+        "Ranjha Shershaah.mp3" -> "Ranjha Shershaah"
+    """
+    # Get just the filename without path
+    filename = os.path.basename(file_path)
+    
+    # Remove extension
+    name = os.path.splitext(filename)[0]
+    
+    # Try to extract song name from patterns like "Artist - Song" or "Artist ft. Artist - Song"
+    # Look for the last dash which usually separates artist from song name
+    if ' - ' in name:
+        parts = name.split(' - ')
+        # Take the last part as it's typically the song name
+        song_name = parts[-1].strip()
+    else:
+        # No dash found, use the whole name
+        song_name = name
+    
+    # Remove common suffixes like (mp3.pm), (official), etc.
+    song_name = re.sub(r'\s*\([^)]*\)\s*$', '', song_name)
+    
+    return song_name.strip()
 
 # --- Constants (Optimized from Shazam Paper) ---
 # Paper mentions: "15 second samples work well" but also states
@@ -122,6 +155,9 @@ class AudioProcessor:
                         best_match = matches[0]
                         song_id, confidence, offset = best_match
                         
+                        # Extract clean song name for display
+                        clean_song_name = extract_song_name(song_id)
+                        
                         # Update match history for confirmation
                         self._update_match_history(song_id, confidence)
                         
@@ -130,7 +166,7 @@ class AudioProcessor:
                         
                         result = {
                             "match": True,
-                            "song_id": song_id,
+                            "song_id": clean_song_name,  # Send clean name to frontend
                             "confidence": confidence,
                             "offset": offset,
                             "confirmed": is_confirmed,
@@ -140,7 +176,7 @@ class AudioProcessor:
                         await self.websocket.send_json(result)
                         
                         status = "✓ CONFIRMED" if is_confirmed else "? Potential"
-                        print(f"{status} MATCH: {song_id}, Confidence: {confidence}, Offset: {offset}")
+                        print(f"{status} MATCH: {clean_song_name}, Confidence: {confidence}, Offset: {offset}")
                         
                     else:
                         # No match found in this window

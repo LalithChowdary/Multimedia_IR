@@ -1,6 +1,6 @@
 import os
 import shutil
-from fastapi import FastAPI, UploadFile, File, WebSocket, BackgroundTasks, Query
+from fastapi import FastAPI, UploadFile, File, WebSocket, BackgroundTasks, Query, Form
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
@@ -25,7 +25,7 @@ TRANSCRIPT_DIR.mkdir(exist_ok=True)
 
 from fingerprint import generate_fingerprints
 from database import FingerprintDB
-from streaming import websocket_endpoint
+from streaming import websocket_endpoint, extract_song_name
 
 # Video Recognition Imports
 from transcribe import transcribe_videos
@@ -55,6 +55,9 @@ app.add_middleware(
 # Thumbnails will be available at /content/thumbnails/filename.jpg
 app.mount("/content/videos", StaticFiles(directory="backend/videos"), name="videos")
 app.mount("/content/thumbnails", StaticFiles(directory="backend/thumbnails"), name="thumbnails")
+# Serve audio files and audio thumbnails
+app.mount("/content/audio", StaticFiles(directory="backend/audio_files"), name="audio")
+app.mount("/content/audio_thumbnails", StaticFiles(directory="backend/audio_thumbnails"), name="audio_thumbnails")
 
 # --- Database Loading ---
 # Load the fingerprint database into memory when the app starts.
@@ -99,9 +102,11 @@ async def identify_song(audio_file: UploadFile = File(...)):
         # Prepare the response
         if matches:
             best_match = matches[0]
+            song_id = best_match[0]
+            clean_song_name = extract_song_name(song_id)
             result = {
                 "match": True,
-                "song_id": best_match[0],
+                "song_id": clean_song_name,
                 "confidence": best_match[1]
             }
         else:
@@ -131,7 +136,7 @@ VIDEOS_DIR.mkdir(parents=True, exist_ok=True)
 # Global dictionary to store processing status
 processing_status = {}
 
-def process_video_background(file_path: Path):
+def process_video_background(file_path: Path, language: str = None):
     """
     Background task to process the uploaded video:
     1. Transcribe the video using Whisper
@@ -139,32 +144,20 @@ def process_video_background(file_path: Path):
     """
     filename = file_path.name
     try:
-        print(f"Starting background processing for: {filename}")
+        print(f"Starting background processing for: {filename} (Language: {language})")
         processing_status[filename] = "Starting..."
         
         # 1. Transcribe
-        # The transcribe_videos function expects a list of files or scans a directory.
-        # We can modify it or just point it to the directory. 
-        # For now, let's assume it scans the directory.
-        # A better approach would be to import the specific logic, but reusing the script is easier.
         print("Running transcription...")
         processing_status[filename] = "Transcribing..."
-        
-        # We need to ensure transcribe_videos is called correctly.
-        # It usually scans a directory. Let's point it to our VIDEOS_DIR.
-        # Note: transcribe.py might need adjustment if it hardcodes paths, 
-        # but assuming it uses relative paths from BACKEND_DIR, it should work if configured right.
-        # For safety, let's call the functions directly if possible.
         
         # Ensure transcript directory exists
         TRANSCRIPT_DIR = Path("backend/video_recognision/transcripts")
         TRANSCRIPT_DIR.mkdir(parents=True, exist_ok=True)
         
-        # Run transcription (this might take a while)
-        # We pass [file_path] to only transcribe this specific file if the function supports it,
-        # otherwise we let it scan. Checking transcribe.py, it usually scans.
-        # Let's assume we just run the full pipeline for simplicity in this prototype.
-        transcribe_videos() 
+        # Run transcription
+        # Pass the specific file and language
+        transcribe_videos(target_file=file_path, language=language) 
         
         # 2. Index
         print("Updating search index...")
@@ -178,43 +171,14 @@ def process_video_background(file_path: Path):
         print(f"Error processing video {filename}: {e}")
         processing_status[filename] = f"Error: {str(e)}"
 
-@app.get("/status/{filename}")
-def get_status(filename: str):
-    """
-    Returns the processing status of a video file.
-    """
-    status = processing_status.get(filename, "Unknown")
-    return {"status": status}
-
-@app.delete("/delete_video/{filename}")
-def delete_video(filename: str):
-    """
-    Deletes a video file and its corresponding transcript.
-    """
-    video_path = VIDEO_DIR / filename
-    transcript_path = TRANSCRIPT_DIR / f"{Path(filename).stem}.txt"
-    
-    deleted_files = []
-    
-    try:
-        if video_path.exists():
-            os.remove(video_path)
-            deleted_files.append("video")
-            
-        if transcript_path.exists():
-            os.remove(transcript_path)
-            deleted_files.append("transcript")
-            
-        if not deleted_files:
-            raise HTTPException(status_code=404, detail="Video or transcript not found")
-            
-        return {"message": f"Successfully deleted {', '.join(deleted_files)} for {filename}"}
-        
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error deleting files: {str(e)}")
+# ... (keep existing endpoints)
 
 @app.post("/upload_video")
-async def upload_video(background_tasks: BackgroundTasks, video_file: UploadFile = File(...)):
+async def upload_video(
+    background_tasks: BackgroundTasks, 
+    video_file: UploadFile = File(...),
+    language: str = Form(...)
+):
     """
     Uploads a video file for indexing.
     The video is saved, and then processed in the background (transcription + indexing).
@@ -227,7 +191,7 @@ async def upload_video(background_tasks: BackgroundTasks, video_file: UploadFile
             shutil.copyfileobj(video_file.file, buffer)
             
         # Trigger background processing
-        background_tasks.add_task(process_video_background, file_path)
+        background_tasks.add_task(process_video_background, file_path, language)
         
         return {
             "message": "Video uploaded successfully. Processing started in background.",

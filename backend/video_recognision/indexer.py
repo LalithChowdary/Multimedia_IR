@@ -87,7 +87,7 @@ def create_chunks(segments: List[Dict], video_name: str) -> List[Dict]:
         combined_text = ' '.join(s['text'] for s in chunk_segments)
         
         # Prepend video title to give it more weight in the embedding
-        combined_text = f"Video: {video_name}. {combined_text}"
+        # combined_text = f"Video: {video_name}. {combined_text}"
         
         # Skip if chunk is too short
         if len(combined_text) < MIN_CHUNK_LENGTH:
