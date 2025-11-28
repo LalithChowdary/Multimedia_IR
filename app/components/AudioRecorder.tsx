@@ -37,6 +37,11 @@ export default function AudioRecorder() {
     const ring2Ref = useRef<HTMLDivElement>(null);
     const ring3Ref = useRef<HTMLDivElement>(null);
     const buttonRef = useRef<HTMLButtonElement>(null);
+    const noMatchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+    // --- Configuration ---
+    const CONFIDENCE_THRESHOLD = 40; // Minimum confidence to show a match
+    const TIMEOUT_DURATION = 15000; // 15 seconds timeout
 
     useEffect(() => {
         return () => stopRecording();
@@ -46,6 +51,12 @@ export default function AudioRecorder() {
         setMatch(null);
         setStatus('Listening...');
         setIsListening(false);
+
+        // Set timeout for "No match found"
+        if (noMatchTimeoutRef.current) clearTimeout(noMatchTimeoutRef.current);
+        noMatchTimeoutRef.current = setTimeout(() => {
+            stopRecording('No match found');
+        }, TIMEOUT_DURATION);
 
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -84,7 +95,21 @@ export default function AudioRecorder() {
 
             ws.onmessage = (event) => {
                 const result: MatchResult = JSON.parse(event.data);
+                
+                // Frontend Confidence Filter
+                if (result.match && (result.confidence || 0) < CONFIDENCE_THRESHOLD) {
+                    // Filter out low confidence matches
+                    setStatus('Listening...');
+                    return;
+                }
+
                 if (result.match) {
+                    // Clear timeout on successful match
+                    if (noMatchTimeoutRef.current) {
+                        clearTimeout(noMatchTimeoutRef.current);
+                        noMatchTimeoutRef.current = null;
+                    }
+
                     setMatch(result);
                     if (result.confirmed) {
                         setStatus('Match Confirmed');
@@ -158,7 +183,12 @@ export default function AudioRecorder() {
         animationFrameRef.current = requestAnimationFrame(visualize);
     };
 
-    const stopRecording = () => {
+    const stopRecording = (finalStatus: string = '') => {
+        if (noMatchTimeoutRef.current) {
+            clearTimeout(noMatchTimeoutRef.current);
+            noMatchTimeoutRef.current = null;
+        }
+
         if (animationFrameRef.current) {
             cancelAnimationFrame(animationFrameRef.current);
             animationFrameRef.current = null;
@@ -205,7 +235,7 @@ export default function AudioRecorder() {
 
         setIsRecording(false);
         setIsListening(false);
-        setStatus('');
+        setStatus(finalStatus);
     };
 
     const wasFullScreen = useRef(false);
@@ -245,6 +275,13 @@ export default function AudioRecorder() {
             });
 
             const result: MatchResult = await response.json();
+
+            // Frontend Confidence Filter
+            if (result.match && (result.confidence || 0) < CONFIDENCE_THRESHOLD) {
+                setStatus('No match found (Low Confidence)');
+                setTimeout(() => setStatus(''), 3000);
+                return;
+            }
 
             if (result.match) {
                 setMatch(result);

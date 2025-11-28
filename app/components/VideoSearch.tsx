@@ -24,6 +24,7 @@ export default function VideoSearch() {
     const [results, setResults] = useState<SearchResult[]>([]);
     const [videos, setVideos] = useState<VideoItem[]>([]);
     const [isSearching, setIsSearching] = useState(false);
+    const [hasSearched, setHasSearched] = useState(false);
     const [processingFile, setProcessingFile] = useState<string | null>(null);
     const [progressStatus, setProgressStatus] = useState('');
     const [progressStep, setProgressStep] = useState(0);
@@ -52,6 +53,7 @@ export default function VideoSearch() {
         if (!query.trim()) return;
         
         setIsSearching(true);
+        setHasSearched(true);
         try {
             const response = await fetch(`http://127.0.0.1:8000/search_video?query=${encodeURIComponent(query)}`);
             const data = await response.json();
@@ -126,6 +128,7 @@ export default function VideoSearch() {
     const handleClear = () => {
         setQuery('');
         setResults([]);
+        setHasSearched(false);
     };
 
     const handleUpload = async () => {
@@ -194,7 +197,10 @@ export default function VideoSearch() {
                             <input 
                                 type="text" 
                                 value={query}
-                                onChange={(e) => setQuery(e.target.value)}
+                                onChange={(e) => {
+                                    setQuery(e.target.value);
+                                    setHasSearched(false);
+                                }}
                                 onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
                                 placeholder="Find moments in videos..." 
                                 style={{
@@ -228,7 +234,7 @@ export default function VideoSearch() {
                                     ✕
                                 </button>
                             )}
-                            {isSearching && <span style={{ fontSize: '12px', color: '#999' }}>Searching...</span>}
+                            {/* {isSearching && <span style={{ fontSize: '12px', color: '#999' }}>Searching...</span>} */}
                         </div>
                         <button
                             onClick={() => setActiveTab('upload')}
@@ -353,7 +359,9 @@ export default function VideoSearch() {
                                 </div>
                             ))}
                         </div>
-                    ) : !isSearching && query ? (
+                    ) : isSearching ? (
+                        <SearchSkeleton />
+                    ) : !isSearching && hasSearched ? (
                         <div style={{ textAlign: 'center', color: '#aaa', fontSize: '14px', marginTop: '20px' }}>
                             No results found.
                         </div>
@@ -682,7 +690,40 @@ export default function VideoSearch() {
                     from { opacity: 0; transform: translateY(5px); }
                     to { opacity: 1; transform: translateY(0); }
                 }
+                @keyframes shimmer {
+                    0% { background-position: -200% 0; }
+                    100% { background-position: 200% 0; }
+                }
+                .skeleton {
+                    background: linear-gradient(90deg, #f0f0f0 25%, #fafafa 50%, #f0f0f0 75%);
+                    background-size: 200% 100%;
+                    animation: shimmer 1.5s infinite;
+                    border-radius: 8px;
+                }
             `}</style>
         </div>
     );
 }
+
+const SearchSkeleton = () => (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '30px', animation: 'fadeIn 0.4s ease' }}>
+        {[1, 2, 3].map((i) => (
+            <div key={i} style={{ padding: '0' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
+                    <div className="skeleton" style={{ height: '16px', width: '40%' }} />
+                    <div className="skeleton" style={{ height: '16px', width: '10%' }} />
+                </div>
+                
+                <div className="skeleton" style={{
+                    width: '100%',
+                    aspectRatio: '16/9',
+                    marginBottom: '10px',
+                    borderRadius: '12px'
+                }} />
+
+                <div className="skeleton" style={{ height: '14px', width: '90%', marginBottom: '6px' }} />
+                <div className="skeleton" style={{ height: '14px', width: '70%' }} />
+            </div>
+        ))}
+    </div>
+);
