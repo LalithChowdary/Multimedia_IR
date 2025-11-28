@@ -4,6 +4,8 @@ import { useState } from 'react';
 import AudioRecorder from "./components/AudioRecorder";
 import VideoSearch from "./components/VideoSearch";
 
+import FullScreenToggle from "./components/FullScreenToggle";
+
 export default function Home() {
   const [mode, setMode] = useState<'music' | 'video'>('music');
 
@@ -107,6 +109,8 @@ export default function Home() {
             )}
         </div>
       </div>
+
+      <FullScreenToggle />
 
       <footer style={{
         textAlign: 'center',

@@ -121,6 +121,8 @@ export default function VideoSearch() {
         };
     }, [processingFile]);
 
+    const wasFullScreen = useRef(false);
+
     const handleClear = () => {
         setQuery('');
         setResults([]);
@@ -466,7 +468,10 @@ export default function VideoSearch() {
                 }}>
                     {!fileInputRef.current?.files?.[0] && !processingFile && !uploadStatus ? (
                         <div 
-                            onClick={() => fileInputRef.current?.click()}
+                            onClick={() => {
+                                wasFullScreen.current = !!document.fullscreenElement;
+                                fileInputRef.current?.click();
+                            }}
                             style={{ 
                                 border: '1px dashed #ccc', 
                                 borderRadius: '12px', 
@@ -487,7 +492,14 @@ export default function VideoSearch() {
                                 ref={fileInputRef}
                                 accept="video/*"
                                 style={{ display: 'none' }}
-                                onChange={(e) => {
+                                onChange={async (e) => {
+                                    if (wasFullScreen.current) {
+                                        try {
+                                            await document.documentElement.requestFullscreen();
+                                        } catch (e) {
+                                            console.log("Could not restore full screen:", e);
+                                        }
+                                    }
                                     if (e.target.files?.[0]) {
                                         // Force re-render to show language selection
                                         setUploadStatus(''); 

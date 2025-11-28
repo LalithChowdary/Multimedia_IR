@@ -208,7 +208,18 @@ export default function AudioRecorder() {
         setStatus('');
     };
 
+    const wasFullScreen = useRef(false);
+
     const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        // Restore full screen if it was active before upload
+        if (wasFullScreen.current) {
+            try {
+                await document.documentElement.requestFullscreen();
+            } catch (e) {
+                console.log("Could not restore full screen:", e);
+            }
+        }
+
         const file = event.target.files?.[0];
         if (!file) return;
 
@@ -456,7 +467,10 @@ export default function AudioRecorder() {
                     style={{ display: 'none' }}
                 />
                 <button
-                    onClick={() => fileInputRef.current?.click()}
+                    onClick={() => {
+                        wasFullScreen.current = !!document.fullscreenElement;
+                        fileInputRef.current?.click();
+                    }}
                     disabled={isRecording || isUploading}
                     style={{
                         padding: '12px 28px',
